@@ -1,0 +1,6 @@
+{
+  "id": "tr_amount_to_string",
+  "name": "금액→문자열",
+  "type": "EXPRESSION",
+  "expression": "String(Math.floor(Number(value)))"
+}

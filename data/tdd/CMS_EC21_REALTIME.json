@@ -1,0 +1,28 @@
+{
+  "id": "CMS_EC21_REALTIME",
+  "name": "실시간 출금이체",
+  "code": "EC21",
+  "category": "실시간이체",
+  "version": "0.3.0",
+  "status": "DRAFT",
+  "updatedAt": "2026-02-20",
+  "protocol": { "type": "TCP_SOCKET", "encoding": "EUC-KR" },
+  "layout": {
+    "records": [
+      {
+        "id": "single",
+        "recordType": "SINGLE",
+        "length": 500,
+        "fields": [
+          { "id": "s_msg_length", "name": "전문길이", "offset": 0, "length": 4, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "computed.msgLength", "transformRef": null, "description": "전체 바이트" },
+          { "id": "s_tx_code", "name": "거래코드", "offset": 4, "length": 8, "type": "AN", "pad": "NONE", "fixedValue": "EC210100", "required": true, "sourceRef": null, "transformRef": null, "description": "실시간출금" },
+          { "id": "s_institution_code", "name": "기관코드", "offset": 12, "length": 10, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": null, "required": true, "sourceRef": "ds_institution.inst_code", "transformRef": null, "description": "" },
+          { "id": "s_filler", "name": "FILLER", "offset": 22, "length": 478, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": "", "required": false, "sourceRef": null, "transformRef": null, "description": "작성중" }
+        ]
+      }
+    ]
+  },
+  "transformRefs": [],
+  "dataSourceRefs": [],
+  "testCases": []
+}

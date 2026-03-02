@@ -1,0 +1,13 @@
+{
+  "id": "tr_result_code_parse",
+  "name": "결과코드 해석",
+  "type": "MAPPING_TABLE",
+  "mappings": {
+    "0000": "정상",
+    "0012": "잔액부족",
+    "0021": "해지계좌",
+    "0031": "한도초과",
+    "0099": "기타오류"
+  },
+  "fallback": "ERROR"
+}

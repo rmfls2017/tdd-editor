@@ -1,0 +1,74 @@
+{
+  "id": "CMS_EB13_WITHDRAW_APP",
+  "name": "출금이체신청 (기관접수)",
+  "code": "EB13",
+  "category": "출금이체",
+  "version": "1.0.0",
+  "status": "ACTIVE",
+  "updatedAt": "2026-03-02",
+  "protocol": { "type": "FILE_BATCH", "encoding": "EUC-KR" },
+  "layout": {
+    "records": [
+      {
+        "id": "header",
+        "recordType": "HEADER",
+        "length": 120,
+        "fields": [
+          { "id": "h_record_type", "name": "레코드구분", "offset": 0, "length": 1, "type": "A", "pad": "NONE", "fixedValue": "H", "required": true, "sourceRef": null, "transformRef": null, "description": "Header 식별자" },
+          { "id": "h_service_code", "name": "업무구분코드", "offset": 1, "length": 2, "type": "AN", "pad": "NONE", "fixedValue": "EB", "required": true, "sourceRef": null, "transformRef": null, "description": "Electronic Banking" },
+          { "id": "h_file_code", "name": "파일구분", "offset": 3, "length": 2, "type": "N", "pad": "ZERO_LEFT", "fixedValue": "13", "required": true, "sourceRef": null, "transformRef": null, "description": "13=출금이체신청" },
+          { "id": "h_institution_code", "name": "이용기관코드", "offset": 5, "length": 10, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": null, "required": true, "sourceRef": "ds_institution.inst_code", "transformRef": null, "description": "금결원 부여 기관코드" },
+          { "id": "h_send_date", "name": "전송일자", "offset": 15, "length": 8, "type": "N", "pad": "NONE", "fixedValue": null, "required": true, "sourceRef": "context.sendDate", "transformRef": "tr_date_to_yyyymmdd", "description": "YYYYMMDD" },
+          { "id": "h_send_seq", "name": "전송차수", "offset": 23, "length": 2, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "ds_send_sequence.seq_no", "transformRef": null, "description": "01~99" },
+          { "id": "h_total_count", "name": "총건수", "offset": 25, "length": 7, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "computed.totalDataCount", "transformRef": null, "description": "Data 총 건수" },
+          { "id": "h_institution_name", "name": "이용기관명", "offset": 32, "length": 40, "type": "HAN", "pad": "SPACE_RIGHT", "fixedValue": null, "required": true, "sourceRef": "ds_institution.inst_name", "transformRef": null, "description": "EUC-KR 한글명" },
+          { "id": "h_contact_phone", "name": "담당자연락처", "offset": 72, "length": 12, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": null, "required": false, "sourceRef": "ds_institution.contact_phone", "transformRef": null, "description": "전화번호" },
+          { "id": "h_filler", "name": "FILLER", "offset": 84, "length": 36, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": "", "required": false, "sourceRef": null, "transformRef": null, "description": "예비" }
+        ]
+      },
+      {
+        "id": "data",
+        "recordType": "DATA",
+        "length": 120,
+        "fields": [
+          { "id": "d_record_type", "name": "레코드구분", "offset": 0, "length": 1, "type": "A", "pad": "NONE", "fixedValue": "R", "required": true, "sourceRef": null, "transformRef": null, "description": "Data 식별자" },
+          { "id": "d_seq_no", "name": "일련번호", "offset": 1, "length": 7, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "computed.recordSequence", "transformRef": null, "description": "0000001~" },
+          { "id": "d_bank_code", "name": "은행코드", "offset": 8, "length": 3, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "input.bankCode", "transformRef": "tr_bank_code", "description": "금결원 3자리" },
+          { "id": "d_account_no", "name": "계좌번호", "offset": 11, "length": 20, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": null, "required": true, "sourceRef": "input.accountNo", "transformRef": null, "description": "출금계좌" },
+          { "id": "d_withdraw_amount", "name": "출금신청금액", "offset": 31, "length": 13, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "input.amount", "transformRef": "tr_amount_to_string", "description": "원 단위" },
+          { "id": "d_depositor_name", "name": "예금주명", "offset": 44, "length": 16, "type": "HAN", "pad": "SPACE_RIGHT", "fixedValue": null, "required": true, "sourceRef": "input.depositorName", "transformRef": null, "description": "예금주" },
+          { "id": "d_birth_biz_no", "name": "생년월일/사업자번호", "offset": 60, "length": 13, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": null, "required": true, "sourceRef": "input.birthOrBizNo", "transformRef": "tr_strip_hyphens", "description": "생년월일 or 사업자번호" },
+          { "id": "d_app_type", "name": "신청구분", "offset": 73, "length": 1, "type": "N", "pad": "NONE", "fixedValue": null, "required": true, "sourceRef": "input.applicationType", "transformRef": null, "description": "1=신규,3=해지,7=변경" },
+          { "id": "d_payer_no", "name": "납부자번호", "offset": 74, "length": 20, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": null, "required": true, "sourceRef": "input.payerNo", "transformRef": null, "description": "납부자 고유번호" },
+          { "id": "d_app_date", "name": "신청일자", "offset": 94, "length": 8, "type": "N", "pad": "NONE", "fixedValue": null, "required": true, "sourceRef": "input.applicationDate", "transformRef": "tr_date_to_yyyymmdd", "description": "YYYYMMDD" },
+          { "id": "d_result_code", "name": "처리결과", "offset": 102, "length": 4, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": "    ", "required": false, "sourceRef": null, "transformRef": null, "description": "송신 시 공백" },
+          { "id": "d_filler", "name": "FILLER", "offset": 106, "length": 14, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": "", "required": false, "sourceRef": null, "transformRef": null, "description": "예비" }
+        ]
+      },
+      {
+        "id": "trailer",
+        "recordType": "TRAILER",
+        "length": 120,
+        "fields": [
+          { "id": "t_record_type", "name": "레코드구분", "offset": 0, "length": 1, "type": "A", "pad": "NONE", "fixedValue": "T", "required": true, "sourceRef": null, "transformRef": null, "description": "Trailer 식별자" },
+          { "id": "t_total_count", "name": "총건수", "offset": 1, "length": 7, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "computed.totalDataCount", "transformRef": null, "description": "총 건수" },
+          { "id": "t_total_amount", "name": "총금액", "offset": 8, "length": 13, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "computed.totalAmount", "transformRef": null, "description": "총 금액" },
+          { "id": "t_new_count", "name": "신규건수", "offset": 21, "length": 7, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "computed.newCount", "transformRef": null, "description": "신청구분=1" },
+          { "id": "t_cancel_count", "name": "해지건수", "offset": 28, "length": 7, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "computed.cancelCount", "transformRef": null, "description": "신청구분=3" },
+          { "id": "t_change_count", "name": "변경건수", "offset": 35, "length": 7, "type": "N", "pad": "ZERO_LEFT", "fixedValue": null, "required": true, "sourceRef": "computed.changeCount", "transformRef": null, "description": "신청구분=7" },
+          { "id": "t_filler", "name": "FILLER", "offset": 42, "length": 78, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": "", "required": false, "sourceRef": null, "transformRef": null, "description": "예비" }
+        ]
+      }
+    ]
+  },
+  "transformRefs": ["tr_bank_code", "tr_amount_to_string", "tr_date_to_yyyymmdd", "tr_strip_hyphens", "tr_euckr_byte_pad"],
+  "dataSourceRefs": ["ds_institution", "ds_send_sequence", "ds_payer_list"],
+  "testCases": [
+    { "id": "TC_001", "name": "정상 - 3건 혼합", "success": true },
+    { "id": "TC_002", "name": "정상 - 단건 신규", "success": true },
+    { "id": "TC_003", "name": "정상 - 혼합 유형", "success": true },
+    { "id": "TC_004", "name": "에러 - 기관 미존재", "success": false },
+    { "id": "TC_005", "name": "에러 - 목록 비어있음", "success": false },
+    { "id": "TC_006", "name": "에러 - 미등록 은행코드", "success": false }
+  ]
+}

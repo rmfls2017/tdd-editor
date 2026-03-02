@@ -1,0 +1,17 @@
+{
+  "id": "ds_original_request",
+  "name": "원거래 EB13 조회",
+  "type": "DB_QUERY",
+  "query": "SELECT req_id, payer_no,\n  amount, status\nFROM tb_cms_withdraw_req\nWHERE inst_id = :instId\n  AND send_date = :sendDate",
+  "params": [
+    { "name": "instId", "source": "context.institutionId" },
+    { "name": "sendDate", "source": "context.sendDate" }
+  ],
+  "stub": {
+    "scenarios": {
+      "default": [
+        { "req_id": "REQ001", "payer_no": "PAY00000001", "amount": 50000, "status": "SENT" }
+      ]
+    }
+  }
+}

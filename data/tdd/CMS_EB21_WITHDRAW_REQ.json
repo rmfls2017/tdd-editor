@@ -1,0 +1,46 @@
+{
+  "id": "CMS_EB21_WITHDRAW_REQ",
+  "name": "출금이체 (자금이체)",
+  "code": "EB21",
+  "category": "출금이체",
+  "version": "0.9.0",
+  "status": "DRAFT",
+  "updatedAt": "2026-02-28",
+  "protocol": { "type": "FILE_BATCH", "encoding": "EUC-KR" },
+  "layout": {
+    "records": [
+      {
+        "id": "header",
+        "recordType": "HEADER",
+        "length": 200,
+        "fields": [
+          { "id": "h_record_type", "name": "레코드구분", "offset": 0, "length": 1, "type": "A", "pad": "NONE", "fixedValue": "H", "required": true, "sourceRef": null, "transformRef": null, "description": "" },
+          { "id": "h_service_code", "name": "업무구분코드", "offset": 1, "length": 2, "type": "AN", "pad": "NONE", "fixedValue": "EB", "required": true, "sourceRef": null, "transformRef": null, "description": "" },
+          { "id": "h_file_code", "name": "파일구분", "offset": 3, "length": 2, "type": "N", "pad": "ZERO_LEFT", "fixedValue": "21", "required": true, "sourceRef": null, "transformRef": null, "description": "" },
+          { "id": "h_filler", "name": "FILLER", "offset": 5, "length": 195, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": "", "required": false, "sourceRef": null, "transformRef": null, "description": "작성중" }
+        ]
+      },
+      {
+        "id": "data",
+        "recordType": "DATA",
+        "length": 300,
+        "fields": [
+          { "id": "d_record_type", "name": "레코드구분", "offset": 0, "length": 1, "type": "A", "pad": "NONE", "fixedValue": "R", "required": true, "sourceRef": null, "transformRef": null, "description": "" },
+          { "id": "d_filler", "name": "FILLER", "offset": 1, "length": 299, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": "", "required": false, "sourceRef": null, "transformRef": null, "description": "작성중" }
+        ]
+      },
+      {
+        "id": "trailer",
+        "recordType": "TRAILER",
+        "length": 100,
+        "fields": [
+          { "id": "t_record_type", "name": "레코드구분", "offset": 0, "length": 1, "type": "A", "pad": "NONE", "fixedValue": "T", "required": true, "sourceRef": null, "transformRef": null, "description": "" },
+          { "id": "t_filler", "name": "FILLER", "offset": 1, "length": 99, "type": "AN", "pad": "SPACE_RIGHT", "fixedValue": "", "required": false, "sourceRef": null, "transformRef": null, "description": "작성중" }
+        ]
+      }
+    ]
+  },
+  "transformRefs": [],
+  "dataSourceRefs": [],
+  "testCases": []
+}

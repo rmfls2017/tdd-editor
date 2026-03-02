@@ -1,0 +1,6 @@
+{
+  "id": "tr_euckr_byte_pad",
+  "name": "EUC-KR 바이트 패딩",
+  "type": "FUNCTION",
+  "functionName": "EUCKR_RIGHT_PAD"
+}

@@ -1,0 +1,6 @@
+{
+  "id": "tr_strip_hyphens",
+  "name": "하이픈 제거",
+  "type": "EXPRESSION",
+  "expression": "String(value).replace(/-/g, '')"
+}

@@ -1,0 +1,7 @@
+{
+  "tddId": "CMS_EB14_WITHDRAW_RES",
+  "rules": [
+    { "id": "vr_count", "name": "건수 일치", "level": "ERROR" },
+    { "id": "vr_match", "name": "원거래 매칭", "level": "ERROR" }
+  ]
+}

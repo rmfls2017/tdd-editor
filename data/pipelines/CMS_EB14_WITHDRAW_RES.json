@@ -1,0 +1,11 @@
+{
+  "tddId": "CMS_EB14_WITHDRAW_RES",
+  "steps": [
+    { "order": 1, "id": "step_read", "action": "READ_FILE", "description": "EB14 수신 파일 읽기" },
+    { "order": 2, "id": "step_parse", "action": "PARSE_TELEGRAM", "description": "고정길이 레코드 파싱" },
+    { "order": 3, "id": "step_validate", "action": "VALIDATE", "description": "건수/무결성 검증" },
+    { "order": 4, "id": "step_transform", "action": "TRANSFORM_ALL", "description": "결과코드 변환" },
+    { "order": 5, "id": "step_match", "action": "FETCH_DATA", "dataSourceRef": "ds_original_request", "description": "원거래 매칭" },
+    { "order": 6, "id": "step_update", "action": "UPDATE_DB", "description": "신청 결과 DB 반영" }
+  ]
+}

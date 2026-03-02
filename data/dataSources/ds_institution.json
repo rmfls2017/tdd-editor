@@ -1,0 +1,19 @@
+{
+  "id": "ds_institution",
+  "name": "이용기관 마스터",
+  "type": "DB_QUERY",
+  "query": "SELECT inst_code, inst_name,\n  contact_phone\nFROM tb_cms_institution\nWHERE inst_id = :instId\n  AND status = 'ACTIVE'",
+  "params": [
+    { "name": "instId", "source": "context.institutionId" }
+  ],
+  "stub": {
+    "scenarios": {
+      "default": {
+        "inst_code": "A123456789",
+        "inst_name": "테스트이용기관",
+        "contact_phone": "0212345678"
+      },
+      "not_found": null
+    }
+  }
+}
