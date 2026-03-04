@@ -252,7 +252,6 @@ export default function App() {
                 }
                 setTddId(newTdd.id);
                 setMode("view");
-                setTab("layout");
                 setTemplate(null);
                 setEditTarget(null);
                 showToast(editTarget ? "TDD 수정 완료" : "TDD 생성 완료", "gn");

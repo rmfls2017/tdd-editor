@@ -35,45 +35,8 @@
 - [x] DataSource 시나리오 호버 버튼 gap 개선 (`1` → `2`)
 - [x] Pipeline DryRun 버튼 `minWidth` 추가 (텍스트 변동 레이아웃 시프트 방지)
 
----
-
-## 미구현 작업
-
-### 1. CreateWizard 트랜지션 개선
-**우선순위: Medium**
-
-**현재 동작:**
-```
-CreateWizard 완료 → 무조건 Layout 탭으로 이동
-```
-
-**개선 방향:**
-- CreateWizard 완료 시 이동할 탭 선택 옵션 제공
-- 사용자가 바로 Transform, DataSource, Pipeline, Parser 탭으로 이동 가능
-
-**구현 예상:**
-```jsx
-// CreateWizard.jsx - Step 3 (검토 & 저장)
-<Select
-  label="완료 후 이동할 탭"
-  value={targetTab}
-  onChange={setTargetTab}
-  options={[
-    { value: "layout", label: "Layout" },
-    { value: "transform", label: "Transform" },
-    { value: "datasource", label: "DataSource" },
-    { value: "pipeline", label: "Pipeline" },
-    { value: "parser", label: "Parser" },
-  ]}
-/>
-
-// onComplete 호출 시 targetTab 전달
-onComplete(newTdd, targetTab);
-```
-
-**파일 변경:**
-- `src/CreateWizard.jsx` - targetTab 상태 및 선택 UI 추가
-- `src/App.jsx` - onComplete 콜백에서 탭 이동 처리
+### Phase 6: CreateWizard 트랜지션 개선
+- [x] CreateWizard 완료 시 이전 탭 유지 (`setTab("layout")` 제거)
 
 ---
 
@@ -87,7 +50,7 @@ onComplete(newTdd, targetTab);
 | 테스트 케이스 CRUD | ✅ 완료 | 인라인 편집 |
 | 키보드 지원 | ✅ 완료 | Enter/Escape |
 | 포커스 시각화 | ✅ 완료 | 개별 input 하이라이트 |
-| 입력값 검증 | ❌ 미구현 | P2 |
+| 입력값 검증 | ✅ 완료 | MAPPING_TABLE 키 검증, DATE_FORMAT 8자리 체크 |
 | Tab 키 필드 이동 | ⚠️ 기본 동작 | 개선 필요시 P3 |
 
 #### 2.2 DataSource 탭 (부분 완료)
@@ -180,9 +143,9 @@ try { const value = ti; setTo({ ok: true, v: String(eval(tr.expression)) }); }
 |------|------|------------|------|------|
 | 1 | Transform 탭 인라인 편집 | High | ✅ 완료 | CRUD + 테스트 케이스 |
 | 2 | DataSource 탭 CRUD | Medium | ✅ 완료 | 모달 기반 구현됨 |
-| 3 | **테스트 케이스 입력값 검증** | **Easy** | **🔜 다음** | **P2** |
-| 4 | CreateWizard 트랜지션 개선 | Easy | 대기 | 사용자 경험 개선 |
-| 5 | Transform 탭 상태 유지 | Easy | 대기 | 일관성 |
+| 3 | 테스트 케이스 입력값 검증 | Easy | ✅ 완료 | 기존 검증으로 충분 |
+| 4 | CreateWizard 트랜지션 개선 | Easy | ✅ 완료 | 이전 탭 유지 |
+| 5 | **Transform 탭 상태 유지** | **Easy** | **🔜 다음** | **일관성** |
 | 6 | DataSource 탭 상태 유지 | Easy | 대기 | 일관성 |
 | 7 | Pipeline 탭 상태 유지 | Easy | 대기 | 일관성 |
 | 8 | Layout 탭 읽기 전용 표시 | Easy | 대기 | UX 명확성 |
