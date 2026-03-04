@@ -40,119 +40,56 @@
 
 ---
 
-### 2. 인라인 편집 기능 확장
-**우선순위: High**
+## 미구현 작업
 
-#### 2.1 Transform 탭 (부분 완료)
-| 기능 | 상태 | 비고 |
-|------|------|------|
-| Transform CRUD | ✅ 완료 | 모달 기반 |
-| 테스트 케이스 CRUD | ✅ 완료 | 인라인 편집 |
-| 키보드 지원 | ✅ 완료 | Enter/Escape |
-| 포커스 시각화 | ✅ 완료 | 개별 input 하이라이트 |
-| 입력값 검증 | ✅ 완료 | MAPPING_TABLE 키 검증, DATE_FORMAT 8자리 체크 |
-| Tab 키 필드 이동 | ⚠️ 기본 동작 | 개선 필요시 P3 |
+### 1. Parser Transform 타입 불일치 수정 [Bug]
+- `dataParser.js`의 `applyTransform`이 `CODE_MAP`/`NUMBER_FORMAT` 타입 사용
+- 실제 TDD 스키마는 `MAPPING_TABLE`/`EXPRESSION` 타입 사용
+- Parser "변환 후" 컬럼이 항상 원본값 그대로 표시되는 버그
+- **파일:** `src/utils/dataParser.js`
 
-#### 2.2 DataSource 탭 (부분 완료)
-| 기능 | 상태 | 비고 |
-|------|------|------|
-| DataSource CRUD | ✅ 완료 | 모달 기반 (DataSourceEditModal) |
-| 시나리오 CRUD | ✅ 완료 | 모달 기반, 탭 전환 방식 |
-| 파라미터 편집 | ⚠️ 모달 내 편집 | 인라인 편집 미지원 |
+### 2. DataSource 시나리오 삭제 후 fallback 오류 [Bug]
+- "default" 시나리오 없을 때 `setSc("default")` → `undefined` 표시
+- **파일:** `src/components/DataSourceTab.jsx`
 
-#### 2.3 LayoutTab 인라인 편집 (미구현)
-- 현재 읽기 전용
-- 필드 속성(offset, length, type 등) 직접 편집 기능 필요시 구현
+### 3. 테스트 케이스 추가 시 빈 데이터 즉시 저장 방지 [Bug]
+- `handleAddTestCase`가 빈 테스트 케이스를 즉시 API 저장
+- 사용자가 값을 입력한 후 저장하도록 변경
+- **파일:** `src/components/TransformTab.jsx`
 
-**파일 변경 예상:**
-- `src/components/DataSourceTab.jsx` - CRUD UI 추가
-- `src/components/DataSourceEditModal.jsx` - 이미 존재, 활용 가능
+### 4. eval() → 안전한 대안 교체 [Security]
+- `TransformTab.jsx` (141행), `TransformEditModal.jsx` (90행)
+- `new Function("value", expression)(input)` 또는 safe evaluator로 교체
+- **파일:** `src/components/TransformTab.jsx`, `src/components/TransformEditModal.jsx`
 
----
+### 5. 에러 피드백 패턴 통일 [UX 일관성]
+- `alert()` → toast 또는 Modal (DataSourceEditModal)
+- `confirm()` → 확인 Modal (TransformTab, DataSourceTab, CreateWizard, App)
+- **파일:** 다수
 
-### 3. 다른 탭들 상태 유지 확장 (Low Priority)
-**우선순위: Low**
+### 6. TransformEditModal ID 검증 피드백 [UX]
+- `tr_` 접두사 필수이나 저장 버튼만 비활성화, 이유 없음
+- 인라인 에러 메시지 추가
+- **파일:** `src/components/TransformEditModal.jsx`
 
-현재 Parser 탭만 상태 유지가 구현됨. 일관성을 위해 다른 탭들도 동일하게 적용 가능:
-
-#### 3.1 Transform 탭
-| 유지할 상태 | 설명 |
-|------------|------|
-| `sel` | 선택된 Transform ID |
-| `ti` | 테스트 입력값 |
-| `to` | 변환 결과 |
-
-#### 3.2 DataSource 탭
-| 유지할 상태 | 설명 |
-|------------|------|
-| `sel` | 선택된 DataSource ID |
-| `sc` | 선택된 Stub 시나리오 |
-
-#### 3.3 Pipeline 탭
-| 유지할 상태 | 설명 |
-|------------|------|
-| `drs` | DryRun 상태 ("run" | "done" | null) |
-| `rs` | 현재 실행 중인 step 인덱스 |
-
-**참고:** 이 작업들은 Parser 탭과 동일한 패턴으로 구현하면 됨:
-1. App.jsx에 각 탭별 상태 관리 추가
-2. 각 탭 컴포넌트에 `savedState`, `onStateChange` props 추가
-
----
-
-### 4. 추가 개선 사항 (Optional)
-**우선순위: Low**
-
-#### 4.1 Layout 탭 읽기 전용 표시
-- 현재 Layout 탭은 CreateWizard에서만 편집 가능
-- 읽기 전용임을 명확히 표시하거나, 인라인 편집 기능 추가 고려
-
-#### 4.2 TDD 검색 기능 개선
-- 현재: 이름, 코드, ID로 검색
-- 개선: 카테고리 필터, 상태(ACTIVE/DRAFT/DEPRECATED) 필터 추가
-
-#### 4.3 Export 기능
-- 현재 TDD를 JSON 파일로 내보내기 기능
-- Import는 이미 구현됨
-
----
-
-## 기술 부채 (Tech Debt)
-
-### 1. TransformTab의 eval() 사용
-```jsx
-// TransformTab.jsx:41
-try { const value = ti; setTo({ ok: true, v: String(eval(tr.expression)) }); }
-```
-- 보안 경고 발생 (빌드 시)
-- 안전한 expression evaluator로 교체 권장
-
-### 2. 컴포넌트 분리
-- `CreateWizard.jsx`에 Micro Components(B, Input, Select, Check, Btn) 중복 정의
-- `common.jsx`로 통합 권장
-
-### 3. TypeScript 마이그레이션
-- 현재 모든 파일이 JSX
-- 타입 안정성을 위해 TSX 마이그레이션 고려
+### 7. 컴포넌트 중복 정리 [코드 품질]
+- CreateWizard 내 B/Input/Select/Btn을 common.jsx로 통합
+- API 불일치 해소 (boolean props vs string variant)
+- **파일:** `src/CreateWizard.jsx`, `src/components/common.jsx`
 
 ---
 
 ## 구현 우선순위 요약
 
-| 순위 | 작업 | 예상 난이도 | 상태 | 비고 |
-|------|------|------------|------|------|
-| 1 | Transform 탭 인라인 편집 | High | ✅ 완료 | CRUD + 테스트 케이스 |
-| 2 | DataSource 탭 CRUD | Medium | ✅ 완료 | 모달 기반 구현됨 |
-| 3 | 테스트 케이스 입력값 검증 | Easy | ✅ 완료 | 기존 검증으로 충분 |
-| 4 | CreateWizard 트랜지션 개선 | Easy | ✅ 완료 | 이전 탭 유지 |
-| 5 | **Transform 탭 상태 유지** | **Easy** | **🔜 다음** | **일관성** |
-| 6 | DataSource 탭 상태 유지 | Easy | 대기 | 일관성 |
-| 7 | Pipeline 탭 상태 유지 | Easy | 대기 | 일관성 |
-| 8 | Layout 탭 읽기 전용 표시 | Easy | 대기 | UX 명확성 |
-| 9 | Export 기능 | Medium | 대기 | 기능 완성도 |
-| 10 | eval() 제거 | Medium | 대기 | 보안 |
-| 11 | 컴포넌트 통합 | Low | 대기 | 코드 정리 |
-| 12 | TypeScript 마이그레이션 | High | 대기 | 장기 과제 |
+| 순위 | 작업 | 분류 | 예상 난이도 |
+|------|------|------|------------|
+| 1 | Parser Transform 타입 불일치 수정 | Bug | Medium |
+| 2 | DataSource 시나리오 삭제 후 fallback 오류 | Bug | Easy |
+| 3 | 테스트 케이스 추가 시 빈 데이터 즉시 저장 방지 | Bug | Easy |
+| 4 | eval() → 안전한 대안 교체 | Security | Medium |
+| 5 | 에러 피드백 패턴 통일 | UX 일관성 | Medium |
+| 6 | TransformEditModal ID 검증 피드백 | UX | Easy |
+| 7 | 컴포넌트 중복 정리 | 코드 품질 | Medium |
 
 ---
 
