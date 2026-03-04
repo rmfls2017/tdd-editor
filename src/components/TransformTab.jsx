@@ -4,6 +4,27 @@ import { B, Sec, EmptyState, Btn } from "./common.jsx";
 import { ActionButton } from "./ActionButton.jsx";
 import TransformEditModal from "./TransformEditModal.jsx";
 
+function validateInput(transform, value) {
+  if (!value || !transform) return { valid: true };
+
+  if (transform.type === "MAPPING_TABLE") {
+    const exists = value in transform.mappings;
+    return exists
+      ? { valid: true }
+      : { valid: false, message: `'${value}' 매핑 키에 없음` };
+  }
+
+  if (transform.type === "DATE_FORMAT") {
+    const cleaned = value.replace(/[-\/.\s]/g, "");
+    const isDate = /^\d{8}$/.test(cleaned);
+    return isDate
+      ? { valid: true }
+      : { valid: false, message: "날짜 형식이 아닙니다" };
+  }
+
+  return { valid: true };
+}
+
 // ═══════════════════════════════════════
 //  Transform Tab
 //  key={tdd.id} forces fresh mount
@@ -217,7 +238,7 @@ export default function TransformTab({ tdd, onTddUpdate }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {/* Header */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 6, padding: "4px 6px", fontSize: 8, color: C.txD, textTransform: "uppercase", letterSpacing: 0.3 }}>
-                  <span>INPUT</span><span>EXPECTED</span><span>RESULT</span><span style={{ width: 60 }}></span>
+                  <span>INPUT</span><span>EXPECTED</span><span>RESULT</span><span style={{ width: 76 }}></span>
                 </div>
                 {/* Test case rows */}
                 {tr.testCases.map(tc => {
@@ -230,16 +251,18 @@ export default function TransformTab({ tdd, onTddUpdate }) {
                     else if (e.key === "Escape") { e.preventDefault(); setEditingTestCase(null); }
                   };
                   const focusedField = editingTestCase?.focus;
+                  const validation = isEditing ? validateInput(tr, editingTestCase.input) : { valid: true };
+                  const inputBorderColor = !validation.valid ? C.or : focusedField === "input" ? C.ac : C.bd;
                   return (
                     <div key={tc.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 6, alignItems: "center", padding: "4px 6px", background: isEditing ? C.ac + "0d" : C.s3, borderRadius: 3, border: `1px solid ${result ? (passed ? C.gn + "38" : C.rd + "38") : C.bd}`, transition: "all 0.15s ease" }}>
                       {isEditing ? (
                         <>
-                          <input autoFocus value={editingTestCase.input} onChange={e => setEditingTestCase(prev => ({ ...prev, input: e.target.value }))} onKeyDown={handleKeyDown} onFocus={() => setEditingTestCase(prev => ({ ...prev, focus: "input" }))} onBlur={() => setEditingTestCase(prev => ({ ...prev, focus: null }))} style={{ padding: "3px 5px", background: C.s2, border: `1px solid ${focusedField === "input" ? C.ac : C.bd}`, borderRadius: 2, color: C.txB, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, outline: "none", transition: "border-color 0.1s ease" }} placeholder="입력값" />
+                          <input autoFocus value={editingTestCase.input} onChange={e => setEditingTestCase(prev => ({ ...prev, input: e.target.value }))} onKeyDown={handleKeyDown} onFocus={() => setEditingTestCase(prev => ({ ...prev, focus: "input" }))} onBlur={() => setEditingTestCase(prev => ({ ...prev, focus: null }))} style={{ padding: "3px 5px", background: C.s2, border: `1px solid ${inputBorderColor}`, borderRadius: 2, color: C.txB, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, outline: "none", transition: "border-color 0.1s ease" }} title={validation.valid ? undefined : validation.message} placeholder="입력값" />
                           <input value={editingTestCase.expected} onChange={e => setEditingTestCase(prev => ({ ...prev, expected: e.target.value }))} onKeyDown={handleKeyDown} onFocus={() => setEditingTestCase(prev => ({ ...prev, focus: "expected" }))} onBlur={() => setEditingTestCase(prev => ({ ...prev, focus: null }))} style={{ padding: "3px 5px", background: C.s2, border: `1px solid ${focusedField === "expected" ? C.ac : C.bd}`, borderRadius: 2, color: C.txB, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, outline: "none", transition: "border-color 0.1s ease" }} placeholder="기대값" />
                           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: C.txD }}>—</span>
-                          <div style={{ display: "flex", gap: 2, width: 60, justifyContent: "flex-end" }}>
-                            <button onClick={handleSaveTestCase} title="저장 (Enter)" style={{ width: 22, height: 22, background: C.gn, border: "none", borderRadius: 2, color: "#fff", cursor: "pointer", fontSize: 10 }}>✓</button>
-                            <button onClick={() => setEditingTestCase(null)} title="취소 (Esc)" style={{ width: 22, height: 22, background: "transparent", border: `1px solid ${C.bd}`, borderRadius: 2, color: C.txD, cursor: "pointer", fontSize: 10 }}>✕</button>
+                          <div style={{ display: "flex", gap: 4, width: 76, justifyContent: "flex-end" }}>
+                            <button onClick={handleSaveTestCase} title="저장 (Enter)" style={{ width: 22, height: 22, boxSizing: "border-box", background: C.gn, border: "1px solid " + C.gn, borderRadius: 2, color: "#fff", cursor: "pointer", fontSize: 10 }}>✓</button>
+                            <button onClick={() => setEditingTestCase(null)} title="취소 (Esc)" style={{ width: 22, height: 22, boxSizing: "border-box", background: "transparent", border: `1px solid ${C.rd}`, borderRadius: 2, color: C.rd, cursor: "pointer", fontSize: 10 }}>✕</button>
                           </div>
                         </>
                       ) : (
@@ -247,7 +270,7 @@ export default function TransformTab({ tdd, onTddUpdate }) {
                           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: C.txB }}>{tc.input || <span style={{ color: C.txD }}>—</span>}</span>
                           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: C.cy }}>{tc.expected || <span style={{ color: C.txD }}>—</span>}</span>
                           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: result ? (passed ? C.gn : C.rd) : C.txD }}>{result ? (passed ? `✓ ${result.v}` : `✗ ${result.v}`) : "—"}</span>
-                          <div style={{ display: "flex", gap: 2, width: 60, justifyContent: "flex-end" }}>
+                          <div style={{ display: "flex", gap: 4, width: 76, justifyContent: "flex-end" }}>
                             <ActionButton variant="run" onClick={() => handleRunTestCase(tr.id, tc)} />
                             <ActionButton variant="edit" onClick={() => handleEditTestCase(tr.id, tc)} />
                             <ActionButton variant="delete" onClick={() => handleDeleteTestCase(tr.id, tc.id)} />

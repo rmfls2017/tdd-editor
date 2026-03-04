@@ -27,6 +27,14 @@
 - [x] 포커스 상태 추적: 실제 커서가 있는 input만 파란 테두리
 - [x] 버튼 툴팁 추가 ("저장 (Enter)", "취소 (Esc)")
 
+### Phase 5: 버튼 스타일 및 사이즈 통일
+- [x] 인라인 편집 취소 버튼 스타일 통일 (회색 → 빨간색, ActionButton delete variant 일치)
+- [x] ActionButton에 `boxSizing: "border-box"` 추가 (border 포함 정확한 크기 보장)
+- [x] 테스트 케이스 헤더-바디 컬럼 정렬 (`width: 60` → `76`)
+- [x] 편집 모드 저장/취소 버튼 border 통일 및 gap/width 일관성 확보
+- [x] DataSource 시나리오 호버 버튼 gap 개선 (`1` → `2`)
+- [x] Pipeline DryRun 버튼 `minWidth` 추가 (텍스트 변동 레이아웃 시프트 방지)
+
 ---
 
 ## 미구현 작업
@@ -82,12 +90,12 @@ onComplete(newTdd, targetTab);
 | 입력값 검증 | ❌ 미구현 | P2 |
 | Tab 키 필드 이동 | ⚠️ 기본 동작 | 개선 필요시 P3 |
 
-#### 2.2 DataSource 탭 (미구현)
+#### 2.2 DataSource 탭 (부분 완료)
 | 기능 | 상태 | 비고 |
 |------|------|------|
-| DataSource CRUD | ❌ 미구현 | 모달 기반 예정 |
-| 시나리오 편집 | ⚠️ 부분 구현 | 모달 방식 |
-| 파라미터 편집 | ❌ 미구현 | |
+| DataSource CRUD | ✅ 완료 | 모달 기반 (DataSourceEditModal) |
+| 시나리오 CRUD | ✅ 완료 | 모달 기반, 탭 전환 방식 |
+| 파라미터 편집 | ⚠️ 모달 내 편집 | 인라인 편집 미지원 |
 
 #### 2.3 LayoutTab 인라인 편집 (미구현)
 - 현재 읽기 전용
@@ -171,8 +179,8 @@ try { const value = ti; setTo({ ok: true, v: String(eval(tr.expression)) }); }
 | 순위 | 작업 | 예상 난이도 | 상태 | 비고 |
 |------|------|------------|------|------|
 | 1 | Transform 탭 인라인 편집 | High | ✅ 완료 | CRUD + 테스트 케이스 |
-| 2 | **DataSource 탭 인라인 편집** | **Medium** | **🔜 다음** | **CRUD 기능 추가** |
-| 3 | 테스트 케이스 입력값 검증 | Easy | 대기 | P2 |
+| 2 | DataSource 탭 CRUD | Medium | ✅ 완료 | 모달 기반 구현됨 |
+| 3 | **테스트 케이스 입력값 검증** | **Easy** | **🔜 다음** | **P2** |
 | 4 | CreateWizard 트랜지션 개선 | Easy | 대기 | 사용자 경험 개선 |
 | 5 | Transform 탭 상태 유지 | Easy | 대기 | 일관성 |
 | 6 | DataSource 탭 상태 유지 | Easy | 대기 | 일관성 |

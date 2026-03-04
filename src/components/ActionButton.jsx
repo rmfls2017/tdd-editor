@@ -19,6 +19,7 @@ export const ActionButton = ({ variant, size = 'md', onClick }) => {
       onClick={onClick}
       style={{
         width: s.width, height: s.height,
+        boxSizing: 'border-box',
         background: 'transparent',
         border: `1px solid ${v.color}`,
         borderRadius: s.borderRadius,

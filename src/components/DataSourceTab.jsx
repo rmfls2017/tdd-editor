@@ -168,7 +168,7 @@ export default function DataSourceTab({ tdd, onTddUpdate }) {
                 <div key={s} style={{ position: "relative", display: "inline-block" }} onMouseEnter={() => setHoveredScenario(s)} onMouseLeave={() => setHoveredScenario(null)}>
                   <Chip on={sc === s} onClick={() => setSc(s)}>{s}</Chip>
                   {hoveredScenario === s && (
-                    <div style={{ position: "absolute", top: -2, right: -2, display: "flex", gap: 1 }}>
+                    <div style={{ position: "absolute", top: -2, right: -2, display: "flex", gap: 2 }}>
                       <ActionButton variant="edit" size="sm" onClick={(e) => { e.stopPropagation(); handleEditScenario(ds.id, s); }} />
                       <ActionButton variant="delete" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteScenario(ds.id, s); }} />
                     </div>
