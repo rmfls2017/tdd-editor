@@ -124,6 +124,21 @@ export const S = {
 // ═══════════════════════════════════════
 export const I = {
   layout: "▦", transform: "⇄", dataSource: "↓", pipeline: "▶", parser: "🔍",
+  builder: "📝",
   add: "+", edit: "✎", clone: "⧉", delete: "×", check: "✓",
   up: "▲", down: "▼", dot: "●", circle: "○",
 };
+
+// ═══════════════════════════════════════
+//  Expression Operations (safe eval replacement)
+// ═══════════════════════════════════════
+export const EXPRESSION_OPS = [
+  { id: "UPPER", label: "대문자 변환", fn: (v) => v.toUpperCase() },
+  { id: "LOWER", label: "소문자 변환", fn: (v) => v.toLowerCase() },
+  { id: "TRIM", label: "공백 제거", fn: (v) => v.trim() },
+  { id: "TRIM_ALL", label: "모든 공백 제거", fn: (v) => v.replace(/\s/g, '') },
+  { id: "PAD_LEFT", label: "왼쪽 패딩", hasArgs: true, fn: (v, len, ch) => v.padStart(Number(len) || 0, ch || '0') },
+  { id: "PAD_RIGHT", label: "오른쪽 패딩", hasArgs: true, fn: (v, len, ch) => v.padEnd(Number(len) || 0, ch || '0') },
+  { id: "SUBSTRING", label: "부분 문자열", hasArgs: true, fn: (v, start, end) => v.substring(Number(start) || 0, end ? Number(end) : undefined) },
+  { id: "REPLACE", label: "문자열 치환", hasArgs: true, fn: (v, from, to) => from ? v.replace(new RegExp(from, 'g'), to || '') : v },
+];
