@@ -16,6 +16,7 @@ import TransformTab from "./components/TransformTab.jsx";
 import DataSourceTab from "./components/DataSourceTab.jsx";
 import PipelineTab from "./components/PipelineTab.jsx";
 import ParserTab from "./components/ParserTab.jsx";
+import BuilderTab from "./components/BuilderTab.jsx";
 
 // Import utility
 import { importTDDFile, openFileDialog } from "./utils/tddImporter.js";
@@ -36,6 +37,7 @@ export default function App() {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false); // 상태 드롭다운
   const [loading, setLoading] = useState(true);
   const [parserStates, setParserStates] = useState({}); // Parser 탭 상태를 TDD별로 저장
+  const [builderStates, setBuilderStates] = useState({}); // Builder 탭 상태를 TDD별로 저장
   const tdd = tddList.find(t => t.id === tddId);
 
   // Parser 상태 업데이트 헬퍼
@@ -48,6 +50,17 @@ export default function App() {
 
   // Parser 상태 가져오기 헬퍼
   const getParserState = (tddId) => parserStates[tddId] || {};
+
+  // Builder 상태 업데이트 헬퍼
+  const updateBuilderState = (tddId, state) => {
+    setBuilderStates(prev => ({
+      ...prev,
+      [tddId]: { ...prev[tddId], ...state }
+    }));
+  };
+
+  // Builder 상태 가져오기 헬퍼
+  const getBuilderState = (tddId) => builderStates[tddId] || {};
 
   // Load data from API
   useEffect(() => {
@@ -72,6 +85,7 @@ export default function App() {
     { id: "datasource", label: "DataSource", icon: I.dataSource },
     { id: "pipeline", label: "Pipeline", icon: I.pipeline },
     { id: "parser", label: "Parser", icon: I.parser },
+    { id: "builder", label: "Builder", icon: I.builder },
   ];
 
   const recInfo = tdd ? tdd.layout.records.map(r => `${r.recordType}(${r.fields.length}f/${r.length}B)`).join(" + ") : "";
@@ -334,6 +348,7 @@ export default function App() {
               {tab === "datasource" && <DataSourceTab tdd={tdd} onTddUpdate={handleTddUpdate} key={"D_" + tdd.id} />}
               {tab === "pipeline" && <PipelineTab tdd={tdd} onTddUpdate={handleTddUpdate} key={"P_" + tdd.id} />}
               {tab === "parser" && <ParserTab tdd={tdd} key={"P_" + tdd.id} savedState={getParserState(tdd.id)} onStateChange={(state) => updateParserState(tdd.id, state)} />}
+              {tab === "builder" && <BuilderTab tdd={tdd} key={"B_" + tdd.id} savedState={getBuilderState(tdd.id)} onStateChange={(state) => updateBuilderState(tdd.id, state)} />}
             </>}
           </div>
         </>)}
