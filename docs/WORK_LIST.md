@@ -1,95 +1,121 @@
 # TDD Editor - 작업 리스트
 
-> 최종 업데이트: 2026-03-04
+> 최종 업데이트: 2026-03-08
+
+---
+
+## 현재 기능 현황
+
+| 탭 | 상태 | 핵심 기능 |
+|----|------|-----------|
+| **Layout** | 읽기 전용 뷰어 | 바이트맵 시각화, 필드 테이블, 상세 패널 (편집 기능 미구현) |
+| **Parser** | 완료 | 전문 파싱, 인코딩 선택 (EUC-KR/CP949/UTF-8), 유효성 검사, 탭 전환 시 상태 유지 |
+| **Builder** | 완료 | DATA 레코드 CRUD, 전문 생성/미리보기/다운로드/클립보드 복사, 응답 TDD 지원 (요청 전문 임포트, 에러코드 드롭다운, 불능 추적) |
+| **CreateWizard** | 완료 | 4단계 위자드, 생성/편집/복제, CMS 템플릿 지원 |
 
 ---
 
 ## 완료된 작업
 
-### Phase 1: Parser 탭 UI 일관성 복원
-- [x] 상세 패널 너비 `280px` → `260px` 통일
-- [x] 커스텀 섹션 헤더 → `<Sec>` 컴포넌트 적용
-- [x] 커스텀 Empty State → `<EmptyState>` 컴포넌트 적용
+### Phase 10: 신규 TDD 추가
+- [x] CMS_EB11_WITHDRAW_APP (은행접수 출금이체신청) TDD 생성
+- [x] CMS_EB12_WITHDRAW_RES (은행접수 결과통보) TDD 생성
+- [x] CMS_EB13, EB14 v2.0.0 업데이트 (필드 재구조화, transform 참조 제거)
+- [x] ds_error_codes.json 에러코드 데이터소스 추가 (결과코드 + 39종 에러코드)
 
-### Phase 2: 탭 상태 유지 (Parser 탭)
-- [x] App 레벨에서 `parserStates` 상태 관리
-- [x] Parser 탭에 `savedState`, `onStateChange` props 전달
-- [x] 탭 전환 시 입력값, 파싱 결과, 인코딩, activeRecord 유지
+### Phase 9: BuilderTab 응답 TDD 지원
+- [x] responseOf 감지 및 요청 TDD 자동 매칭
+- [x] 요청 전문 붙여넣기 → 응답 DATA 레코드 자동 매핑
+- [x] 에러코드 드롭다운 (ds_error_codes 연동, 카테고리별 분류)
+- [x] 결과코드 Y/N 전환 시 불능코드 자동 처리
+- [x] 불능 레코드 빨간 배경 표시 + 불능 집계 섹션
+- [x] HEADER DataSource 필드 입력 UI
+- [x] dataBuilder에 context/fileName/failure 추적 추가
 
-### Phase 3: Transform 탭 CRUD 기능
-- [x] Transform 추가/수정/삭제 기능 (`TransformEditModal` 활용)
-- [x] 테스트 케이스 CRUD (추가/수정/삭제/실행)
-- [x] Transform 수정 시 testCases 보존 버그 수정
+### Phase 8: Transform/DataSource/Pipeline 탭 제거 및 아키텍처 단순화
+- [x] 6개 컴포넌트 삭제 (ActionButton, TransformTab/EditModal, DataSourceTab/EditModal, PipelineTab)
+- [x] 16개 데이터 파일 삭제 (transforms, dataSources, pipelines)
+- [x] App.jsx, api.js, vite.config.js, theme.js 등 전체 정리
+- [x] ParserTab: applyTransform 제거, "변환 후" 컬럼 제거, 경고 아이콘 도트로 변경
+- [x] DataSource 읽기 전용 엔드포인트 유지 (에러코드 조회용)
 
-### Phase 4: Transform 테스트 케이스 인라인 편집 UX 개선
-- [x] 키보드 지원: `Enter` 저장, `Escape` 취소
-- [x] 편집 모드 시각적 하이라이트 (row 배경색 변경)
-- [x] 포커스 상태 추적: 실제 커서가 있는 input만 파란 테두리
-- [x] 버튼 툴팁 추가 ("저장 (Enter)", "취소 (Esc)")
+### Phase 7: Builder 탭 구현
+- [x] Builder 아이콘 추가 (`theme.js`)
+- [x] 데이터 빌더 유틸리티 (`dataBuilder.js`)
+- [x] BuilderTab 컴포넌트 (`BuilderTab.jsx`)
+- [x] App.jsx에 BuilderTab 통합
 
-### Phase 5: 버튼 스타일 및 사이즈 통일
-- [x] 인라인 편집 취소 버튼 스타일 통일 (회색 → 빨간색, ActionButton delete variant 일치)
-- [x] ActionButton에 `boxSizing: "border-box"` 추가 (border 포함 정확한 크기 보장)
-- [x] 테스트 케이스 헤더-바디 컬럼 정렬 (`width: 60` → `76`)
-- [x] 편집 모드 저장/취소 버튼 border 통일 및 gap/width 일관성 확보
-- [x] DataSource 시나리오 호버 버튼 gap 개선 (`1` → `2`)
-- [x] Pipeline DryRun 버튼 `minWidth` 추가 (텍스트 변동 레이아웃 시프트 방지)
+### Phase 6.5: eval() 보안 취약점 수정
+- [x] `EXPRESSION_OPS` 상수 추가 (이후 Phase 8에서 제거됨)
 
-### Phase 6: CreateWizard 트랜지션 개선
-- [x] CreateWizard 완료 시 이전 탭 유지 (`setTab("layout")` 제거)
-
----
-
-## 미구현 작업
-
-### 1. Parser Transform 타입 불일치 수정 [Bug]
-- `dataParser.js`의 `applyTransform`이 `CODE_MAP`/`NUMBER_FORMAT` 타입 사용
-- 실제 TDD 스키마는 `MAPPING_TABLE`/`EXPRESSION` 타입 사용
-- Parser "변환 후" 컬럼이 항상 원본값 그대로 표시되는 버그
-- **파일:** `src/utils/dataParser.js`
-
-### 2. DataSource 시나리오 삭제 후 fallback 오류 [Bug]
-- "default" 시나리오 없을 때 `setSc("default")` → `undefined` 표시
-- **파일:** `src/components/DataSourceTab.jsx`
-
-### 3. 테스트 케이스 추가 시 빈 데이터 즉시 저장 방지 [Bug]
-- `handleAddTestCase`가 빈 테스트 케이스를 즉시 API 저장
-- 사용자가 값을 입력한 후 저장하도록 변경
-- **파일:** `src/components/TransformTab.jsx`
-
-### 4. eval() → 안전한 대안 교체 [Security]
-- `TransformTab.jsx` (141행), `TransformEditModal.jsx` (90행)
-- `new Function("value", expression)(input)` 또는 safe evaluator로 교체
-- **파일:** `src/components/TransformTab.jsx`, `src/components/TransformEditModal.jsx`
-
-### 5. 에러 피드백 패턴 통일 [UX 일관성]
-- `alert()` → toast 또는 Modal (DataSourceEditModal)
-- `confirm()` → 확인 Modal (TransformTab, DataSourceTab, CreateWizard, App)
-- **파일:** 다수
-
-### 6. TransformEditModal ID 검증 피드백 [UX]
-- `tr_` 접두사 필수이나 저장 버튼만 비활성화, 이유 없음
-- 인라인 에러 메시지 추가
-- **파일:** `src/components/TransformEditModal.jsx`
-
-### 7. 컴포넌트 중복 정리 [코드 품질]
-- CreateWizard 내 B/Input/Select/Btn을 common.jsx로 통합
-- API 불일치 해소 (boolean props vs string variant)
-- **파일:** `src/CreateWizard.jsx`, `src/components/common.jsx`
+### Phase 1-6: 초기 구현
+- [x] Parser 탭 UI 일관성 복원
+- [x] 탭 상태 유지 (Parser/Builder)
+- [x] Transform 탭 CRUD 기능 (이후 Phase 8에서 제거됨)
+- [x] Transform 테스트 케이스 인라인 편집 UX (이후 Phase 8에서 제거됨)
+- [x] 버튼 스타일 및 사이즈 통일
+- [x] CreateWizard 트랜지션 개선
 
 ---
 
-## 구현 우선순위 요약
+## 미완료 작업 (우선순위순)
 
-| 순위 | 작업 | 분류 | 예상 난이도 |
-|------|------|------|------------|
-| 1 | Parser Transform 타입 불일치 수정 | Bug | Medium |
-| 2 | DataSource 시나리오 삭제 후 fallback 오류 | Bug | Easy |
-| 3 | 테스트 케이스 추가 시 빈 데이터 즉시 저장 방지 | Bug | Easy |
-| 4 | eval() → 안전한 대안 교체 | Security | Medium |
-| 5 | 에러 피드백 패턴 통일 | UX 일관성 | Medium |
-| 6 | TransformEditModal ID 검증 피드백 | UX | Easy |
-| 7 | 컴포넌트 중복 정리 | 코드 품질 | Medium |
+### DRAFT TDD → ACTIVE 전환 작업
+
+#### EB21 (자금이체)
+- [ ] FILLER 필드를 실제 비즈니스 필드로 교체
+- [ ] 테스트케이스 정의
+- [ ] validationRules 생성
+- [ ] version 1.0.0 + status ACTIVE 변경
+
+#### EC21 (실시간 출금)
+- [ ] TCP_SOCKET 프로토콜 필드 완성
+- [ ] SINGLE 레코드 구조화
+- [ ] 테스트케이스/validationRules 추가
+- [ ] version 1.0.0 + status ACTIVE 변경
+
+### UX 개선
+
+#### CreateWizard 취소 시 데이터 손실
+**심각도:** HIGH
+
+- 변경사항 있을 때 확인 다이얼로그 표시
+- localStorage에 자동 저장 구현
+
+#### API 실패 시 복구 불가
+**심각도:** HIGH
+
+- 실패 시 롤백 로직 추가
+- 에러 토스트 메시지 표시
+
+#### 로딩 상태 피드백 부재
+**심각도:** MEDIUM
+
+- 저장 버튼 disabled + 로딩 스피너
+- 요청 중복 방지 (debounce)
+
+#### 키보드 접근성 부족
+**심각도:** MEDIUM
+
+- 드롭다운 메뉴 키보드 탐색
+- ARIA 레이블 추가
+
+#### 코드 중복 제거
+**심각도:** LOW
+
+- Toast, JSON Export 등 공통 로직 추출
+
+---
+
+## 보류된 작업
+
+| 작업 | 보류 사유 |
+|------|----------|
+| TypeScript 마이그레이션 | 장기 과제, 현재 기능 개발에 영향 없음 |
+| Layout 탭 필드 편집 기능 | 읽기 전용 뷰어로 충분, 편집은 CreateWizard에서 처리 |
+| Record & Replay | 프로덕션 장애 재현, 필요성 미확인 |
+| Echo Server | 은행 모의 서버, 필요성 미확인 |
+| JSON Schema 검증 + DB 저장 | 현재 파일 기반으로 충분 |
 
 ---
 
@@ -102,17 +128,13 @@ src/
 ├── constants/
 │   └── theme.js               # 테마 상수
 ├── components/
-│   ├── common.jsx             # 공통 컴포넌트 (B, Sec, EmptyState, etc.)
-│   ├── ActionButton.jsx       # 액션 버튼 (edit, delete, run)
+│   ├── common.jsx             # 공통 컴포넌트 (Btn, Sec, EmptyState, etc.)
 │   ├── LayoutTab.jsx          # 레이아웃 탭 (읽기 전용)
-│   ├── TransformTab.jsx       # 변환 규칙 탭 (CRUD + 테스트 케이스)
-│   ├── TransformEditModal.jsx # Transform 편집 모달
-│   ├── DataSourceTab.jsx      # 데이터소스 탭
-│   ├── DataSourceEditModal.jsx # DataSource 편집 모달
-│   ├── PipelineTab.jsx        # 파이프라인 탭
-│   └── ParserTab.jsx          # 파서 탭 (상태 유지 구현됨)
+│   ├── ParserTab.jsx          # 파서 탭 (전문→필드 파싱)
+│   └── BuilderTab.jsx         # 빌더 탭 (필드→전문 생성, 응답 TDD 지원)
 └── utils/
     ├── api.js                 # API 클라이언트
-    ├── dataParser.js          # 데이터 파싱 유틸
+    ├── dataParser.js          # 데이터 파싱 유틸 (전문→필드)
+    ├── dataBuilder.js         # 데이터 빌더 유틸 (필드→전문)
     └── tddImporter.js         # TDD 가져오기 유틸
 ```

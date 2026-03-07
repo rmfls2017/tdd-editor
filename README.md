@@ -11,18 +11,17 @@ npm run dev
 
 ## 핵심 개념
 
-하나의 TDD JSON이 **전문 레이아웃, 변환 규칙, 데이터소스, 파이프라인, 테스트 케이스**를 모두 포함합니다.  
-코드 변경 없이 JSON만 추가/수정하면 새로운 전문 유형을 처리할 수 있는 **메타데이터 기반 런타임 엔진**을 목표합니다.
+하나의 TDD JSON이 **전문 레이아웃, 유효성 검사 규칙, 테스트 케이스**를 포함합니다.
+코드 변경 없이 JSON만 추가/수정하면 새로운 전문 유형을 처리할 수 있는 **메타데이터 기반** 구조입니다.
 
 ## 화면 구성
 
 | 영역 | 기능 |
 |------|------|
-| **사이드바** | TDD Registry — 카테고리별 전문 목록, 검색, 상태/버전 표시 |
-| **Layout** | Record별 탭 분리, 바이트맵 시각화, 필드 테이블 + 누적 길이, 필드 추가/수정/삭제 |
-| **Transform** | 변환 규칙 뷰어 + 즉석 테스트 실행기, 참조 필드 추적 |
-| **DataSource** | SQL 구문 강조, 파라미터 바인딩, Stub 시나리오 전환 |
-| **Pipeline** | 실행 흐름 시각화, DryRun 애니메이션, Validation Rules, Test Cases |
+| **사이드바** | TDD Registry — 카테고리별 전문 목록, 검색, 상태/버전 표시, CreateWizard (생성/편집/복제) |
+| **Layout** | Record별 탭 분리, 바이트맵 시각화, 필드 테이블 + 누적 길이, 필드 상세 패널 (읽기 전용) |
+| **Parser** | 전문 텍스트 → 필드별 파싱, 인코딩 선택 (EUC-KR/CP949/UTF-8), 유효성 검사, 탭 전환 시 상태 유지 |
+| **Builder** | DATA 레코드 CRUD, 전문 생성/미리보기/다운로드/클립보드 복사, 응답 TDD 지원 (요청 전문 임포트, 에러코드 드롭다운) |
 
 ## 데이터 모델
 
@@ -31,12 +30,9 @@ TDD Definition
 ├── protocol          { type: FILE_BATCH|TCP_SOCKET, encoding: EUC-KR }
 ├── layout
 │   └── records[]     각 record마다 독립적인 length
-│       └── fields[]  { offset, length, type, pad, fixedValue, sourceRef, transformRef }
-├── transforms[]      MAPPING_TABLE | EXPRESSION | DATE_FORMAT | FUNCTION
-├── dataSources[]     DB_QUERY + params[] + stub.scenarios{}
-├── pipeline.steps[]  FETCH_DATA → COMPUTE → VALIDATE → TRANSFORM_ALL → BUILD → OUTPUT
+│       └── fields[]  { offset, length, type, pad, fixedValue, sourceRef }
 ├── validationRules[] ERROR | WARNING level
-└── testCases[]       DryRun assertion 기반
+└── testCases[]       assertion 기반
 ```
 
 ## 설계 원칙
@@ -47,22 +43,24 @@ TDD Definition
 
 ## 샘플 정의서
 
-| Code | Name | Status | Protocol | Records |
-|------|------|--------|----------|---------|
-| EB13 | 출금이체신청 | ACTIVE | FILE_BATCH | H:120B + D:120B + T:120B |
-| EB14 | 결과통보 | ACTIVE | FILE_BATCH | H:100B + D:150B + T:80B |
-| EB21 | 자금이체 | DRAFT | FILE_BATCH | H:200B + D:300B + T:100B |
-| EC21 | 실시간 출금 | DRAFT | TCP_SOCKET | SINGLE:500B |
+| Code | Name | Status | Protocol |
+|------|------|--------|----------|
+| EB11 | 출금이체신청 (은행접수) | ACTIVE | FILE_BATCH |
+| EB12 | 결과통보 (은행접수) | ACTIVE | FILE_BATCH |
+| EB13 | 출금이체신청 (기관접수) | ACTIVE | FILE_BATCH |
+| EB14 | 결과통보 (기관접수) | ACTIVE | FILE_BATCH |
+| EB21 | 자금이체 | DRAFT | FILE_BATCH |
+| EC21 | 실시간 출금 | DRAFT | TCP_SOCKET |
 
 ## Tech Stack
 
 - React 18 + Vite 5
 - Inline CSS (외부 CSS 의존성 없음)
 
-## 추후 구현 예정
+## 장기 로드맵 (보류)
 
-- [ ] Transform / DataSource / Pipeline 편집 기능
-- [ ] DryRun Results 탭 (Step Trace, HEX diff)
+- [ ] Layout 탭 필드 편집 기능 (추가/수정/삭제)
+- [ ] DRAFT TDD 완성 (EB21 자금이체, EC21 실시간 출금)
 - [ ] Record & Replay (프로덕션 장애 재현)
 - [ ] Echo Server (은행 모의 서버)
 - [ ] JSON Schema 검증 + DB 저장 + 엔진 hot reload
