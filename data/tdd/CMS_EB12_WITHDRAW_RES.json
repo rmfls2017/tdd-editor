@@ -1,9 +1,10 @@
 {
-  "id": "CMS_EB13_WITHDRAW_APP",
-  "name": "출금이체신청 (기관접수)",
-  "code": "EB13",
+  "id": "CMS_EB12_WITHDRAW_RES",
+  "name": "출금이체신청 결과통보 (은행접수)",
+  "code": "EB12",
   "category": "출금이체",
-  "version": "2.0.0",
+  "responseOf": "CMS_EB11_WITHDRAW_APP",
+  "version": "1.0.0",
   "status": "ACTIVE",
   "updatedAt": "2026-03-07",
   "protocol": {
@@ -67,7 +68,7 @@
             "required": true,
             "sourceRef": "computed.fileName",
             "transformRef": null,
-            "description": "EB13MMDD 형식"
+            "description": "EB12MMDD 형식"
           },
           {
             "id": "h_app_date",
@@ -226,11 +227,11 @@
             "length": 4,
             "type": "AN",
             "pad": "SPACE_RIGHT",
-            "fixedValue": "",
+            "fixedValue": null,
             "required": false,
-            "sourceRef": null,
+            "sourceRef": "input.branchCode",
             "transformRef": null,
-            "description": "Space"
+            "description": "CHNG, CNCL 또는 Space"
           },
           {
             "id": "d_fund_type",
@@ -252,11 +253,11 @@
             "length": 1,
             "type": "A",
             "pad": "SPACE_RIGHT",
-            "fixedValue": " ",
-            "required": false,
-            "sourceRef": null,
+            "fixedValue": null,
+            "required": true,
+            "sourceRef": "input.resultCode",
             "transformRef": null,
-            "description": "EB13 송신 시 Space"
+            "description": "EB12 수신 시 N=불능"
           },
           {
             "id": "d_error_code",
@@ -265,37 +266,37 @@
             "length": 4,
             "type": "AN",
             "pad": "SPACE_RIGHT",
-            "fixedValue": "",
+            "fixedValue": null,
             "required": false,
-            "sourceRef": null,
+            "sourceRef": "input.errorCode",
             "transformRef": null,
-            "description": "EB13 송신 시 Space"
+            "description": "EB12 수신 시 불능코드"
           },
           {
-            "id": "d_filler1",
-            "name": "FILLER",
+            "id": "d_birth_check",
+            "name": "생년월일 Check 여부",
             "offset": 96,
             "length": 1,
             "type": "AN",
             "pad": "SPACE_RIGHT",
-            "fixedValue": "",
+            "fixedValue": null,
             "required": false,
-            "sourceRef": null,
+            "sourceRef": "input.birthCheck",
             "transformRef": null,
-            "description": "Space"
+            "description": "Y 또는 Space: Check함, N: Check하지 않음"
           },
           {
-            "id": "d_org_reserved",
-            "name": "기관사용영역",
+            "id": "d_phone_no",
+            "name": "전화번호(핸드폰)",
             "offset": 97,
             "length": 12,
             "type": "AN",
             "pad": "SPACE_RIGHT",
             "fixedValue": null,
             "required": false,
-            "sourceRef": "input.orgReserved",
-            "transformRef": null,
-            "description": "고객관리용 기관 사용 영역"
+            "sourceRef": "input.phoneNo",
+            "transformRef": "tr_strip_hyphens",
+            "description": "하이픈 제외"
           },
           {
             "id": "d_channel",
@@ -304,14 +305,14 @@
             "length": 1,
             "type": "AN",
             "pad": "SPACE_RIGHT",
-            "fixedValue": "",
+            "fixedValue": null,
             "required": false,
-            "sourceRef": null,
+            "sourceRef": "input.channel",
             "transformRef": null,
-            "description": "Space"
+            "description": "1=은행, 4=자동이체 통합관리서비스"
           },
           {
-            "id": "d_filler2",
+            "id": "d_filler",
             "name": "FILLER",
             "offset": 110,
             "length": 10,
@@ -397,20 +398,20 @@
           },
           {
             "id": "t_new_count",
-            "name": "신규등록건수",
+            "name": "등록불능건수 - 신규등록",
             "offset": 35,
             "length": 8,
             "type": "N",
             "pad": "ZERO_LEFT",
             "fixedValue": null,
             "required": true,
-            "sourceRef": "computed.newCount",
+            "sourceRef": "computed.failNewCount",
             "transformRef": null,
-            "description": "신청구분=1인 건수"
+            "description": "신청구분=1인 불능 건수"
           },
           {
             "id": "t_change_count",
-            "name": "변경등록건수",
+            "name": "등록불능건수 - 변경등록",
             "offset": 43,
             "length": 8,
             "type": "N",
@@ -423,29 +424,29 @@
           },
           {
             "id": "t_cancel_count",
-            "name": "해지등록건수",
+            "name": "등록불능건수 - 해지등록",
             "offset": 51,
             "length": 8,
             "type": "N",
             "pad": "ZERO_LEFT",
             "fixedValue": null,
             "required": true,
-            "sourceRef": "computed.cancelCount",
+            "sourceRef": "computed.failCancelCount",
             "transformRef": null,
-            "description": "신청구분=3인 건수"
+            "description": "신청구분=3인 불능 건수"
           },
           {
             "id": "t_voluntary_cancel_count",
-            "name": "임의해지건수",
+            "name": "등록불능건수 - 임의해지",
             "offset": 59,
             "length": 8,
             "type": "N",
             "pad": "ZERO_LEFT",
             "fixedValue": null,
             "required": true,
-            "sourceRef": "computed.voluntaryCancelCount",
+            "sourceRef": "computed.failVoluntaryCancelCount",
             "transformRef": null,
-            "description": "신청구분=7인 건수"
+            "description": "신청구분=7인 불능 건수"
           },
           {
             "id": "t_filler",
@@ -487,17 +488,12 @@
   "testCases": [
     {
       "id": "TC_001",
-      "name": "정상 - 신규 단건",
+      "name": "정상 - 전체 성공 응답",
       "success": true
     },
     {
       "id": "TC_002",
-      "name": "정상 - 해지 단건",
-      "success": true
-    },
-    {
-      "id": "TC_003",
-      "name": "정상 - 혼합 유형",
+      "name": "정상 - 일부 불능 응답",
       "success": true
     }
   ]

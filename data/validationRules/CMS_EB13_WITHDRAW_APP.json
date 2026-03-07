@@ -1,10 +1,30 @@
 {
   "tddId": "CMS_EB13_WITHDRAW_APP",
   "rules": [
-    { "id": "vr_count_match", "name": "Header-Trailer 건수 일치", "level": "ERROR" },
-    { "id": "vr_amount_match", "name": "Trailer 금액 합계 일치", "level": "ERROR" },
-    { "id": "vr_seq", "name": "일련번호 연속성", "level": "ERROR" },
-    { "id": "vr_new_amt", "name": "신규신청 시 금액 필수", "level": "ERROR" },
-    { "id": "vr_dup", "name": "납부자번호 중복 확인", "level": "WARNING" }
+    {
+      "id": "vr_count_match",
+      "name": "Header-Trailer 건수 일치",
+      "level": "ERROR"
+    },
+    {
+      "id": "vr_amount_match",
+      "name": "Trailer 금액 합계 일치",
+      "level": "ERROR"
+    },
+    {
+      "id": "vr_seq",
+      "name": "일련번호 연속성",
+      "level": "ERROR"
+    },
+    {
+      "id": "vr_new_amt",
+      "name": "신규신청 시 금액 필수",
+      "level": "ERROR"
+    },
+    {
+      "id": "vr_dup",
+      "name": "납부자번호 중복 확인",
+      "level": "WARNING"
+    }
   ]
 }
