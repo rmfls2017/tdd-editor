@@ -217,10 +217,6 @@ export default function CreateWizard({onComplete,onCancel,template,editTarget}){
         description:f.description,mac:f.mac||false,
       })),
     }))},
-    // 편집 모드면 기존 transforms/dataSources/pipeline 등 유지
-    transforms: isEditMode ? editTarget.transforms : [],
-    dataSources: isEditMode ? editTarget.dataSources : [],
-    pipeline: isEditMode ? editTarget.pipeline : {steps:[]},
     testCases: isEditMode ? editTarget.testCases : [],
     validationRules: isEditMode ? editTarget.validationRules : [],
   });

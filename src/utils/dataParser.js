@@ -214,63 +214,6 @@ function detectRecordType(line, layout) {
 }
 
 /**
- * Apply transform to a value (placeholder for transform lookup)
- * @param {string} value - Input value
- * @param {Object} transform - Transform definition
- * @returns {string} Transformed value
- */
-export function applyTransform(value, transform) {
-  if (!transform) return value;
-
-  switch (transform.type) {
-    case "CODE_MAP":
-      return transform.mapping?.[value] || value;
-    case "DATE_FORMAT":
-      return formatDate(value, transform.inputFormat, transform.outputFormat);
-    case "NUMBER_FORMAT":
-      return formatNumber(value, transform);
-    default:
-      return value;
-  }
-}
-
-/**
- * Format date value
- * @param {string} value - Date string
- * @param {string} inputFormat - Input format (e.g., "YYYYMMDD")
- * @param {string} outputFormat - Output format (e.g., "YYYY-MM-DD")
- * @returns {string} Formatted date
- */
-function formatDate(value, inputFormat, outputFormat) {
-  if (!value || value.length < 8) return value;
-
-  // Simple YYYYMMDD to YYYY-MM-DD conversion
-  if (inputFormat === "YYYYMMDD" && outputFormat === "YYYY-MM-DD") {
-    return `${value.substring(0, 4)}-${value.substring(4, 6)}-${value.substring(6, 8)}`;
-  }
-
-  return value;
-}
-
-/**
- * Format number value
- * @param {string} value - Number string
- * @param {Object} transform - Transform definition with decimal places etc.
- * @returns {string} Formatted number
- */
-function formatNumber(value, transform) {
-  const num = parseInt(value, 10);
-  if (isNaN(num)) return value;
-
-  if (transform.decimalPlaces) {
-    const divisor = Math.pow(10, transform.decimalPlaces);
-    return (num / divisor).toFixed(transform.decimalPlaces);
-  }
-
-  return num.toLocaleString();
-}
-
-/**
  * Get byte length of string in given encoding
  * @param {string} str - Input string
  * @param {string} encoding - Character encoding

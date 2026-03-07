@@ -125,9 +125,6 @@ export async function importTDDFile(file, existingList) {
     updatedAt: tdd.updatedAt || new Date().toISOString().slice(0, 10),
     category: tdd.category || "기타",
     protocol: tdd.protocol || { type: "FILE_BATCH", encoding: "EUC-KR" },
-    transforms: tdd.transforms || [],
-    dataSources: tdd.dataSources || [],
-    pipeline: tdd.pipeline || { steps: [] },
     testCases: tdd.testCases || [],
     validationRules: tdd.validationRules || [],
   };

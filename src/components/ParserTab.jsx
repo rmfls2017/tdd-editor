@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { C, TC, RC, fc, T, S } from "../constants/theme.js";
 import { B, Chip, Btn, TextArea, Select, Sec, EmptyState } from "./common.jsx";
-import { parseLines, applyTransform, validateParsedData } from "../utils/dataParser.js";
+import { parseLines, validateParsedData } from "../utils/dataParser.js";
 
 // ═══════════════════════════════════════
 //  Parser Tab
@@ -59,14 +59,6 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
     if (!results) return [];
     return results[activeRecord.toLowerCase()] || [];
   }, [results, activeRecord]);
-
-  // Get transform value if available
-  const getTransformValue = (field) => {
-    if (!field.transformRef || !tdd?.transforms) return null;
-    const transform = tdd.transforms.find(t => t.id === field.transformRef);
-    if (!transform) return null;
-    return applyTransform(field.value, transform);
-  };
 
   // Record counts for tabs
   const recordCounts = useMemo(() => {
@@ -145,7 +137,7 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
               H:{validation?.summary.headerCount} D:{validation?.summary.dataCount} T:{validation?.summary.trailerCount}
             </B>
             {validation?.warnings.length > 0 && (
-              <B c={C.or} s>⚠ {validation.warnings.length} 경고</B>
+              <B c={C.or} s>{validation.warnings.length} 경고</B>
             )}
           </div>
 
@@ -177,7 +169,7 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
                         Record {recIdx + 1}/{currentRecords.length} • {record.length}B
                       </span>
                       {record.warnings.length > 0 && (
-                        <B c={C.or} s>⚠ {record.warnings.length}</B>
+                        <B c={C.or} s>{record.warnings.length}</B>
                       )}
                     </div>
 
@@ -185,7 +177,7 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: T.sm }}>
                       <thead>
                         <tr style={{ background: C.s2 }}>
-                          {["", "필드명", "위치", "길이", "원본값", "변환 후"].map(h => (
+                          {["", "필드명", "위치", "길이", "값"].map(h => (
                             <th key={h} style={{
                               padding: "5px 8px",
                               textAlign: "left",
@@ -204,7 +196,6 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
                         {record.fields.map((field, i) => {
                           const col = fc[i % fc.length];
                           const sel = selectedField === `${recIdx}-${field.id}`;
-                          const transformedValue = getTransformValue(field);
                           const hasWarning = record.warnings.some(w => w.fieldId === field.id);
 
                           return (
@@ -224,7 +215,7 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
                               </td>
                               <td style={{ padding: "4px 8px", borderBottom: `1px solid ${C.bd}10`, color: C.txB, fontWeight: 500 }}>
                                 {field.name}
-                                {hasWarning && <span style={{ marginLeft: 4, color: C.or }}>⚠</span>}
+                                {hasWarning && <span style={{ marginLeft: 4, display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: C.or, verticalAlign: "middle" }} />}
                               </td>
                               <td style={{
                                 padding: "4px 8px",
@@ -251,25 +242,12 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
                                 fontFamily: "'JetBrains Mono',monospace",
                                 fontSize: T.sm,
                                 color: field.isEmpty ? C.txD : C.txB,
-                                maxWidth: 150,
+                                maxWidth: 200,
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap"
                               }}>
                                 {field.isEmpty ? <span style={{ fontStyle: "italic" }}>(empty)</span> : field.value}
-                              </td>
-                              <td style={{
-                                padding: "4px 8px",
-                                borderBottom: `1px solid ${C.bd}10`,
-                                fontFamily: "'JetBrains Mono',monospace",
-                                fontSize: T.sm,
-                                color: transformedValue ? C.gn : C.txD,
-                                maxWidth: 150,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap"
-                              }}>
-                                {transformedValue || "-"}
                               </td>
                             </tr>
                           );
@@ -300,7 +278,6 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
 
                   const ci = record.fields.indexOf(field);
                   const col = fc[ci % fc.length];
-                  const transformedValue = getTransformValue(field);
 
                   return (
                     <div style={{ display: "flex", flexDirection: "column", gap: S[2] }}>
@@ -321,9 +298,7 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
                         ["Raw Value", field.rawValue || "(empty)"],
                         ["Parsed Value", field.value || "(empty)"],
                         field.fixedValue != null && ["Fixed Value", field.fixedValue],
-                        transformedValue && ["Transformed", transformedValue],
-                        field.sourceRef && ["Source", field.sourceRef],
-                        field.transformRef && ["Transform Ref", field.transformRef]
+                        field.sourceRef && ["Source", field.sourceRef]
                       ].filter(Boolean).map(([label, value]) => (
                         <div key={label}>
                           <div style={{
@@ -373,7 +348,7 @@ export default function ParserTab({ tdd, savedState, onStateChange }) {
                   flexShrink: 0
                 }}>
                   <div style={{ fontSize: T.xs, fontWeight: 600, color: C.or, marginBottom: S[1] }}>
-                    ⚠ 경고 ({validation.warnings.length})
+                    경고 ({validation.warnings.length})
                   </div>
                   {validation.warnings.map((w, i) => (
                     <div key={i} style={{

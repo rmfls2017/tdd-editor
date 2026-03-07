@@ -35,44 +35,19 @@ const sendJson = (res, data, status = 200) => {
 
 // Resolve TDD references to full objects
 const resolveTdd = (tdd) => {
-  const transforms = (tdd.transformRefs || []).map(id => {
-    const filePath = path.join(DATA_DIR, 'transforms', `${id}.json`)
-    return readJson(filePath)
-  }).filter(Boolean)
-
-  const dataSources = (tdd.dataSourceRefs || []).map(id => {
-    const filePath = path.join(DATA_DIR, 'dataSources', `${id}.json`)
-    return readJson(filePath)
-  }).filter(Boolean)
-
-  const pipelineFile = path.join(DATA_DIR, 'pipelines', `${tdd.id}.json`)
-  const pipelineData = readJson(pipelineFile)
-
   const validationFile = path.join(DATA_DIR, 'validationRules', `${tdd.id}.json`)
   const validationData = readJson(validationFile)
 
   return {
     ...tdd,
-    transforms,
-    dataSources,
-    pipeline: pipelineData ? { steps: pipelineData.steps } : { steps: [] },
     validationRules: validationData ? validationData.rules : []
   }
 }
 
 // Extract refs from TDD for saving (inverse of resolve)
 const extractRefs = (tdd) => {
-  const transformRefs = (tdd.transforms || []).map(t => t.id)
-  const dataSourceRefs = (tdd.dataSources || []).map(d => d.id)
-
-  // Remove embedded data, keep only refs
-  const { transforms, dataSources, pipeline, validationRules, ...rest } = tdd
-
-  return {
-    ...rest,
-    transformRefs,
-    dataSourceRefs
-  }
+  const { validationRules, ...rest } = tdd
+  return rest
 }
 
 export default defineConfig({
@@ -136,28 +111,6 @@ export default defineConfig({
             const filePath = path.join(DATA_DIR, 'tdd', `${tdd.id}.json`)
             writeJson(filePath, tddWithRefs)
 
-            // Save embedded transforms
-            if (tdd.transforms) {
-              tdd.transforms.forEach(t => {
-                const tfPath = path.join(DATA_DIR, 'transforms', `${t.id}.json`)
-                writeJson(tfPath, t)
-              })
-            }
-
-            // Save embedded dataSources
-            if (tdd.dataSources) {
-              tdd.dataSources.forEach(d => {
-                const dsPath = path.join(DATA_DIR, 'dataSources', `${d.id}.json`)
-                writeJson(dsPath, d)
-              })
-            }
-
-            // Save pipeline
-            if (tdd.pipeline) {
-              const pipePath = path.join(DATA_DIR, 'pipelines', `${tdd.id}.json`)
-              writeJson(pipePath, { tddId: tdd.id, steps: tdd.pipeline.steps || [] })
-            }
-
             // Save validationRules
             if (tdd.validationRules) {
               const vrPath = path.join(DATA_DIR, 'validationRules', `${tdd.id}.json`)
@@ -177,28 +130,6 @@ export default defineConfig({
             const filePath = path.join(DATA_DIR, 'tdd', `${id}.json`)
             writeJson(filePath, tddWithRefs)
 
-            // Save embedded transforms
-            if (tdd.transforms) {
-              tdd.transforms.forEach(t => {
-                const tfPath = path.join(DATA_DIR, 'transforms', `${t.id}.json`)
-                writeJson(tfPath, t)
-              })
-            }
-
-            // Save embedded dataSources
-            if (tdd.dataSources) {
-              tdd.dataSources.forEach(d => {
-                const dsPath = path.join(DATA_DIR, 'dataSources', `${d.id}.json`)
-                writeJson(dsPath, d)
-              })
-            }
-
-            // Save pipeline
-            if (tdd.pipeline) {
-              const pipePath = path.join(DATA_DIR, 'pipelines', `${id}.json`)
-              writeJson(pipePath, { tddId: id, steps: tdd.pipeline.steps || [] })
-            }
-
             // Save validationRules
             if (tdd.validationRules) {
               const vrPath = path.join(DATA_DIR, 'validationRules', `${id}.json`)
@@ -213,10 +144,8 @@ export default defineConfig({
             const filePath = path.join(DATA_DIR, 'tdd', `${id}.json`)
             if (fs.existsSync(filePath)) {
               fs.unlinkSync(filePath)
-              // Also delete pipeline and validationRules
-              const pipePath = path.join(DATA_DIR, 'pipelines', `${id}.json`)
+              // Also delete validationRules
               const vrPath = path.join(DATA_DIR, 'validationRules', `${id}.json`)
-              if (fs.existsSync(pipePath)) fs.unlinkSync(pipePath)
               if (fs.existsSync(vrPath)) fs.unlinkSync(vrPath)
             }
             return sendJson(res, { success: true })
@@ -226,59 +155,7 @@ export default defineConfig({
         })
 
         // ═══════════════════════════════════════
-        //  Transforms API
-        // ═══════════════════════════════════════
-        server.middlewares.use('/api/transforms', (req, res, next) => {
-          const url = new URL(req.url, 'http://localhost')
-          const pathParts = url.pathname.split('/').filter(Boolean)
-          const id = pathParts[0]
-          const transformsDir = path.join(DATA_DIR, 'transforms')
-
-          // GET /api/transforms
-          if (req.method === 'GET' && !id) {
-            const files = listJsonFiles(transformsDir)
-            const transforms = files.map(f => readJson(path.join(transformsDir, f))).filter(Boolean)
-            return sendJson(res, transforms)
-          }
-
-          // GET /api/transforms/:id
-          if (req.method === 'GET' && id) {
-            const filePath = path.join(transformsDir, `${id}.json`)
-            const transform = readJson(filePath)
-            if (!transform) return sendJson(res, { error: 'Not found' }, 404)
-            return sendJson(res, transform)
-          }
-
-          // POST /api/transforms
-          if (req.method === 'POST') {
-            const transform = req.body
-            if (!transform.id) return sendJson(res, { error: 'ID required' }, 400)
-            const filePath = path.join(transformsDir, `${transform.id}.json`)
-            writeJson(filePath, transform)
-            return sendJson(res, transform, 201)
-          }
-
-          // PUT /api/transforms/:id
-          if (req.method === 'PUT' && id) {
-            const transform = req.body
-            transform.id = id
-            const filePath = path.join(transformsDir, `${id}.json`)
-            writeJson(filePath, transform)
-            return sendJson(res, transform)
-          }
-
-          // DELETE /api/transforms/:id
-          if (req.method === 'DELETE' && id) {
-            const filePath = path.join(transformsDir, `${id}.json`)
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
-            return sendJson(res, { success: true })
-          }
-
-          next()
-        })
-
-        // ═══════════════════════════════════════
-        //  DataSources API
+        //  DataSources API (read-only, for error codes etc.)
         // ═══════════════════════════════════════
         server.middlewares.use('/api/dataSources', (req, res, next) => {
           const url = new URL(req.url, 'http://localhost')
@@ -286,75 +163,12 @@ export default defineConfig({
           const id = pathParts[0]
           const dsDir = path.join(DATA_DIR, 'dataSources')
 
-          // GET /api/dataSources
-          if (req.method === 'GET' && !id) {
-            const files = listJsonFiles(dsDir)
-            const dataSources = files.map(f => readJson(path.join(dsDir, f))).filter(Boolean)
-            return sendJson(res, dataSources)
-          }
-
           // GET /api/dataSources/:id
           if (req.method === 'GET' && id) {
             const filePath = path.join(dsDir, `${id}.json`)
             const ds = readJson(filePath)
             if (!ds) return sendJson(res, { error: 'Not found' }, 404)
             return sendJson(res, ds)
-          }
-
-          // POST /api/dataSources
-          if (req.method === 'POST') {
-            const ds = req.body
-            if (!ds.id) return sendJson(res, { error: 'ID required' }, 400)
-            const filePath = path.join(dsDir, `${ds.id}.json`)
-            writeJson(filePath, ds)
-            return sendJson(res, ds, 201)
-          }
-
-          // PUT /api/dataSources/:id
-          if (req.method === 'PUT' && id) {
-            const ds = req.body
-            ds.id = id
-            const filePath = path.join(dsDir, `${id}.json`)
-            writeJson(filePath, ds)
-            return sendJson(res, ds)
-          }
-
-          // DELETE /api/dataSources/:id
-          if (req.method === 'DELETE' && id) {
-            const filePath = path.join(dsDir, `${id}.json`)
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
-            return sendJson(res, { success: true })
-          }
-
-          next()
-        })
-
-        // ═══════════════════════════════════════
-        //  Pipelines API
-        // ═══════════════════════════════════════
-        server.middlewares.use('/api/pipelines', (req, res, next) => {
-          const url = new URL(req.url, 'http://localhost')
-          const pathParts = url.pathname.split('/').filter(Boolean)
-          const tddId = pathParts[0]
-          const pipelinesDir = path.join(DATA_DIR, 'pipelines')
-
-          if (!tddId) return next()
-
-          // GET /api/pipelines/:tddId
-          if (req.method === 'GET') {
-            const filePath = path.join(pipelinesDir, `${tddId}.json`)
-            const pipeline = readJson(filePath)
-            if (!pipeline) return sendJson(res, { tddId, steps: [] })
-            return sendJson(res, pipeline)
-          }
-
-          // PUT /api/pipelines/:tddId
-          if (req.method === 'PUT') {
-            const pipeline = req.body
-            pipeline.tddId = tddId
-            const filePath = path.join(pipelinesDir, `${tddId}.json`)
-            writeJson(filePath, pipeline)
-            return sendJson(res, pipeline)
           }
 
           next()

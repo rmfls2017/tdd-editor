@@ -4,7 +4,6 @@
 // ═══════════════════════════════════════
 
 import { getByteLength } from './dataParser.js';
-import { EXPRESSION_OPS } from '../constants/theme.js';
 
 /**
  * Apply padding to value to match target byte length
@@ -61,43 +60,6 @@ export function truncateToByteLength(str, maxBytes, encoding = "EUC-KR") {
   }
 
   return result;
-}
-
-/**
- * Apply transform to value for building telegram
- * @param {string} value - Input value
- * @param {string} transformRef - Transform reference ID
- * @param {Object} tdd - TDD definition with transforms array
- * @returns {string} Transformed value
- */
-export function applyTransformForBuild(value, transformRef, tdd) {
-  if (!transformRef || !tdd?.transforms) return value;
-
-  const transform = tdd.transforms.find(t => t.id === transformRef);
-  if (!transform) return value;
-
-  switch (transform.type) {
-    case "MAPPING_TABLE":
-      return transform.mappings?.[value] ?? value;
-
-    case "EXPRESSION":
-      const opDef = EXPRESSION_OPS.find(o => o.id === transform.operation);
-      if (opDef) {
-        try {
-          return opDef.fn(String(value), transform.arg1, transform.arg2);
-        } catch (e) {
-          return value;
-        }
-      }
-      return value;
-
-    case "DATE_FORMAT":
-      // Remove hyphens/slashes for date format
-      return String(value).replace(/[-\/]/g, '');
-
-    default:
-      return value;
-  }
 }
 
 /**
@@ -183,11 +145,6 @@ export function buildRecord(recordDef, fieldValues, tdd, computed, recordIndex, 
       }
     } else {
       value = String(fieldValues[field.id] ?? "");
-    }
-
-    // Apply transform if specified
-    if (field.transformRef) {
-      value = applyTransformForBuild(value, field.transformRef, tdd);
     }
 
     // Apply padding
@@ -290,6 +247,3 @@ export function validateDataRecord(record, tdd) {
 
   return { valid: errors.length === 0, errors };
 }
-
-// Re-export getByteLength for convenience
-export { getByteLength } from './dataParser.js';

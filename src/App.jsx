@@ -12,9 +12,6 @@ import { B, Btn, ActionMenu } from "./components/common.jsx";
 
 // Tab components
 import LayoutTab from "./components/LayoutTab.jsx";
-import TransformTab from "./components/TransformTab.jsx";
-import DataSourceTab from "./components/DataSourceTab.jsx";
-import PipelineTab from "./components/PipelineTab.jsx";
 import ParserTab from "./components/ParserTab.jsx";
 import BuilderTab from "./components/BuilderTab.jsx";
 
@@ -81,9 +78,6 @@ export default function App() {
 
   const tabs = [
     { id: "layout", label: "Layout", icon: I.layout },
-    { id: "transform", label: "Transform", icon: I.transform },
-    { id: "datasource", label: "DataSource", icon: I.dataSource },
-    { id: "pipeline", label: "Pipeline", icon: I.pipeline },
     { id: "parser", label: "Parser", icon: I.parser },
     { id: "builder", label: "Builder", icon: I.builder },
   ];
@@ -137,18 +131,6 @@ export default function App() {
   const handleEdit = (tddToEdit) => {
     setEditTarget(tddToEdit);
     setMode("edit");
-  };
-
-  // TDD Update handler (for Transform/DataSource/Pipeline tabs)
-  const handleTddUpdate = async (updatedTdd) => {
-    try {
-      await api.updateTdd(updatedTdd.id, updatedTdd);
-      setTddList(prev => prev.map(t => t.id === updatedTdd.id ? updatedTdd : t));
-      showToast("저장 완료", "gn");
-    } catch (err) {
-      console.error('Failed to update TDD:', err);
-      showToast("저장 실패", "rd");
-    }
   };
 
   // Delete handler
@@ -327,9 +309,6 @@ export default function App() {
           </div>
           <div style={{ display: "flex", gap: 12, padding: "4px 14px", background: C.s, borderBottom: `1px solid ${C.bd}`, flexShrink: 0, fontSize: 9, color: C.txD, flexWrap: "wrap" }}>
             <span>Records: <span style={{ color: C.tx }}>{recInfo}</span></span>
-            <span>Transforms: <span style={{ color: C.tx }}>{tdd?.transforms.length || 0}</span></span>
-            <span>DataSources: <span style={{ color: C.tx }}>{tdd?.dataSources.length || 0}</span></span>
-            <span>Pipeline: <span style={{ color: C.tx }}>{tdd?.pipeline?.steps?.length || 0} steps</span></span>
             <span>Tests: <span style={{ color: C.tx }}>{tdd?.testCases?.length || 0}</span></span>
           </div>
           <div style={{ display: "flex", gap: 0, padding: "0 14px", background: C.s, borderBottom: `1px solid ${C.bd}`, flexShrink: 0 }}>
@@ -344,10 +323,7 @@ export default function App() {
           <div style={{ flex: 1, padding: 12, overflow: "hidden" }}>
             {tdd && <>
               {tab === "layout" && <LayoutTab tdd={tdd} key={"L_" + tdd.id} />}
-              {tab === "transform" && <TransformTab tdd={tdd} onTddUpdate={handleTddUpdate} key={"T_" + tdd.id} />}
-              {tab === "datasource" && <DataSourceTab tdd={tdd} onTddUpdate={handleTddUpdate} key={"D_" + tdd.id} />}
-              {tab === "pipeline" && <PipelineTab tdd={tdd} onTddUpdate={handleTddUpdate} key={"P_" + tdd.id} />}
-              {tab === "parser" && <ParserTab tdd={tdd} key={"P_" + tdd.id} savedState={getParserState(tdd.id)} onStateChange={(state) => updateParserState(tdd.id, state)} />}
+              {tab === "parser" && <ParserTab tdd={tdd} key={"Pa_" + tdd.id} savedState={getParserState(tdd.id)} onStateChange={(state) => updateParserState(tdd.id, state)} />}
               {tab === "builder" && <BuilderTab tdd={tdd} key={"B_" + tdd.id} savedState={getBuilderState(tdd.id)} onStateChange={(state) => updateBuilderState(tdd.id, state)} />}
             </>}
           </div>

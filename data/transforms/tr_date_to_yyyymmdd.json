@@ -1,7 +1,0 @@
-{
-  "id": "tr_date_to_yyyymmdd",
-  "name": "날짜→YYYYMMDD",
-  "type": "DATE_FORMAT",
-  "inputFormats": ["YYYY-MM-DD", "YYYYMMDD"],
-  "outputFormat": "YYYYMMDD"
-}

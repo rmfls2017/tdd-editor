@@ -149,28 +149,6 @@ export const TextArea = ({ value, onChange, mono, rows = 4, placeholder }) => (
   />
 );
 
-// Input component for single-line text input
-export const Input = ({ value, onChange, mono, placeholder, style }) => (
-  <input
-    value={value}
-    onChange={e => onChange(e.target.value)}
-    placeholder={placeholder}
-    style={{
-      width: "100%",
-      padding: "6px 10px",
-      background: C.s3,
-      border: `1px solid ${C.bd}`,
-      borderRadius: 3,
-      color: C.txB,
-      fontFamily: mono ? "'JetBrains Mono',monospace" : "inherit",
-      fontSize: T.sm,
-      outline: "none",
-      boxSizing: "border-box",
-      ...style
-    }}
-  />
-);
-
 // Select component for dropdown selection
 export const Select = ({ value, onChange, options, placeholder }) => (
   <select
@@ -192,63 +170,6 @@ export const Select = ({ value, onChange, options, placeholder }) => (
       <option key={opt.value} value={opt.value}>{opt.label}</option>
     ))}
   </select>
-);
-
-// Modal component for dialogs
-export const Modal = ({ title, onClose, children, width = 500 }) => (
-  <>
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.6)",
-        zIndex: 99
-      }}
-    />
-    <div style={{
-      position: "fixed",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      width,
-      maxWidth: "90vw",
-      maxHeight: "85vh",
-      background: C.s2,
-      border: `1px solid ${C.bd}`,
-      borderRadius: 6,
-      boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-      zIndex: 100,
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden"
-    }}>
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "12px 16px",
-        borderBottom: `1px solid ${C.bd}`,
-        background: C.s
-      }}>
-        <span style={{ fontSize: T.base, fontWeight: 600, color: C.txB }}>{title}</span>
-        <button
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            color: C.txD,
-            fontSize: 18,
-            cursor: "pointer",
-            padding: "2px 6px"
-          }}
-        >×</button>
-      </div>
-      <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
-        {children}
-      </div>
-    </div>
-  </>
 );
 
 // ActionMenu component - dropdown menu for contextual actions
