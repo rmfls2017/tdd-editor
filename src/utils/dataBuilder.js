@@ -66,23 +66,31 @@ export function truncateToByteLength(str, maxBytes, encoding = "EUC-KR") {
  * Calculate computed values from data records
  * @param {Array} dataRecords - Array of data record field values
  * @param {Object} tdd - TDD definition
+ * @param {Object} context - Context with sendDate etc.
  * @returns {Object} Computed values
  */
-export function calculateComputed(dataRecords, tdd) {
+export function calculateComputed(dataRecords, tdd, context = {}) {
   const dataRecordDef = tdd.layout.records.find(r => r.recordType === "DATA");
 
-  // Find field IDs for amount and app_type
+  // Find field IDs for amount, app_type, and result_code
   const amountField = dataRecordDef?.fields.find(f =>
     f.id.includes("amount") || f.name.includes("금액")
   );
   const appTypeField = dataRecordDef?.fields.find(f =>
     f.id.includes("app_type") || f.name.includes("신청구분")
   );
+  const resultCodeField = dataRecordDef?.fields.find(f =>
+    f.id.includes("result_code")
+  );
 
   let totalAmount = 0;
   let newCount = 0;
   let cancelCount = 0;
   let changeCount = 0;
+  let voluntaryCancelCount = 0;
+  let failNewCount = 0;
+  let failCancelCount = 0;
+  let failVoluntaryCancelCount = 0;
 
   dataRecords.forEach((record) => {
     // Sum amounts
@@ -94,11 +102,17 @@ export function calculateComputed(dataRecords, tdd) {
     // Count by app type
     if (appTypeField) {
       const appType = record[appTypeField.id];
-      if (appType === "1") newCount++;
-      else if (appType === "3") cancelCount++;
-      else if (appType === "7") changeCount++;
+      const isFail = resultCodeField && record[resultCodeField.id] === "N";
+      if (appType === "1") { newCount++; if (isFail) failNewCount++; }
+      else if (appType === "3") { cancelCount++; if (isFail) failCancelCount++; }
+      else if (appType === "7") { voluntaryCancelCount++; if (isFail) failVoluntaryCancelCount++; }
     }
   });
+
+  // Calculate fileName (e.g., EB130307 for EB13 + MMDD)
+  const sendDate = context.sendDate || new Date().toISOString().slice(0, 10);
+  const mmdd = sendDate.replace(/-/g, '').slice(4, 8); // MMDD from YYYYMMDD or YYYY-MM-DD
+  const fileName = (tdd.code || "EB13") + mmdd;
 
   return {
     totalDataCount: dataRecords.length,
@@ -106,6 +120,11 @@ export function calculateComputed(dataRecords, tdd) {
     newCount,
     cancelCount,
     changeCount,
+    voluntaryCancelCount,
+    failNewCount,
+    failCancelCount,
+    failVoluntaryCancelCount,
+    fileName,
   };
 }
 
@@ -165,7 +184,6 @@ export function buildRecord(recordDef, fieldValues, tdd, computed, recordIndex, 
  */
 export function buildTelegram(tdd, dataRecords, context = {}, encoding = "EUC-KR") {
   const warnings = [];
-  const computed = calculateComputed(dataRecords, tdd);
 
   // Prepare context for all records
   const contextWithDefaults = {
@@ -173,10 +191,13 @@ export function buildTelegram(tdd, dataRecords, context = {}, encoding = "EUC-KR
     ...context
   };
 
-  // Build HEADER
+  // Calculate computed values with context
+  const computed = calculateComputed(dataRecords, tdd, contextWithDefaults);
+
+  // Build HEADER - headerFields 포함
   const headerDef = tdd.layout.records.find(r => r.recordType === "HEADER");
   const header = headerDef
-    ? buildRecord(headerDef, { _context: contextWithDefaults }, tdd, computed, 0, encoding)
+    ? buildRecord(headerDef, { _context: contextWithDefaults, ...(context.headerFields || {}) }, tdd, computed, 0, encoding)
     : "";
 
   // Build DATA records

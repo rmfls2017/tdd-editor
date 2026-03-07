@@ -324,7 +324,7 @@ export default function App() {
             {tdd && <>
               {tab === "layout" && <LayoutTab tdd={tdd} key={"L_" + tdd.id} />}
               {tab === "parser" && <ParserTab tdd={tdd} key={"Pa_" + tdd.id} savedState={getParserState(tdd.id)} onStateChange={(state) => updateParserState(tdd.id, state)} />}
-              {tab === "builder" && <BuilderTab tdd={tdd} key={"B_" + tdd.id} savedState={getBuilderState(tdd.id)} onStateChange={(state) => updateBuilderState(tdd.id, state)} />}
+              {tab === "builder" && <BuilderTab tdd={tdd} tddList={tddList} key={"B_" + tdd.id} savedState={getBuilderState(tdd.id)} onStateChange={(state) => updateBuilderState(tdd.id, state)} />}
             </>}
           </div>
         </>)}

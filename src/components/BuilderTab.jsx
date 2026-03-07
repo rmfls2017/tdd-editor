@@ -11,8 +11,10 @@ import {
   validateDataRecord,
   calculateComputed
 } from "../utils/dataBuilder.js";
+import { parseLines } from "../utils/dataParser.js";
+import { api } from "../utils/api.js";
 
-export default function BuilderTab({ tdd, savedState, onStateChange }) {
+export default function BuilderTab({ tdd, tddList, savedState, onStateChange }) {
   // Data records state
   const [dataRecords, setDataRecords] = useState(savedState?.dataRecords || []);
   const [selectedIndex, setSelectedIndex] = useState(savedState?.selectedIndex ?? 0);
@@ -20,10 +22,28 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
   // Context state (for HEADER)
   const [context, setContext] = useState(savedState?.context || {
     sendDate: new Date().toISOString().slice(0, 10),
+    headerFields: {},
   });
 
   // Preview state
   const [preview, setPreview] = useState(null);
+
+  // Import state (for response TDD)
+  const [importText, setImportText] = useState("");
+
+  // Error codes data source
+  const [errorCodes, setErrorCodes] = useState(null);
+
+  // Response TDD detection
+  const isResponseTdd = !!tdd.responseOf;
+  const requestTdd = isResponseTdd ? tddList?.find(t => t.id === tdd.responseOf) : null;
+
+  // Load error codes for response TDDs
+  useEffect(() => {
+    if (isResponseTdd) {
+      api.getDataSource("ds_error_codes").then(setErrorCodes).catch(() => {});
+    }
+  }, [isResponseTdd]);
 
   // Save state to parent
   useEffect(() => {
@@ -47,10 +67,21 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
     );
   }, [dataRecordDef]);
 
+  // HEADER에서 DataSource 참조 필드 추출
+  const headerEditableFields = useMemo(() => {
+    const headerDef = tdd.layout.records.find(r => r.recordType === "HEADER");
+    if (!headerDef) return [];
+    return headerDef.fields.filter(f =>
+      f.fixedValue == null &&
+      !f.sourceRef?.startsWith("computed.") &&
+      f.sourceRef?.startsWith("ds_")
+    );
+  }, [tdd]);
+
   // Computed summary
   const computed = useMemo(() =>
-    calculateComputed(dataRecords, tdd),
-    [dataRecords, tdd]
+    calculateComputed(dataRecords, tdd, context),
+    [dataRecords, tdd, context]
   );
 
   // Record validation status
@@ -88,10 +119,18 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
 
   const handleFieldChange = (fieldId, value) => {
     const newRecords = [...dataRecords];
-    newRecords[selectedIndex] = {
-      ...newRecords[selectedIndex],
-      [fieldId]: value
-    };
+    const record = { ...newRecords[selectedIndex], [fieldId]: value };
+
+    // 응답 TDD: 결과코드 변경 시 불능코드 자동 처리
+    if (isResponseTdd && fieldId === "d_result_code") {
+      if (value === "Y") {
+        record.d_error_code = "0000";
+      } else if (value === "N") {
+        record.d_error_code = "";
+      }
+    }
+
+    newRecords[selectedIndex] = record;
     setDataRecords(newRecords);
     setPreview(null);
   };
@@ -118,6 +157,163 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
   const handleCopyToClipboard = () => {
     const result = preview || buildTelegram(tdd, dataRecords, context, tdd.protocol?.encoding || "EUC-KR");
     navigator.clipboard.writeText(result.lines.join("\n"));
+  };
+
+  // Import from request telegram
+  const handleImportFromRequest = () => {
+    if (!requestTdd || !importText.trim()) return;
+
+    const lines = importText.split("\n").filter(l => l.trim());
+    const encoding = requestTdd.protocol?.encoding || "EUC-KR";
+    const parsed = parseLines(lines, requestTdd.layout, encoding);
+
+    // Get response DATA field definitions
+    const resDataDef = tdd.layout.records.find(r => r.recordType === "DATA");
+    if (!resDataDef) return;
+
+    // Get request DATA field definitions
+    const reqDataDef = requestTdd.layout.records.find(r => r.recordType === "DATA");
+    if (!reqDataDef) return;
+
+    // Map request data records to response data records
+    const newRecords = parsed.data.map(parsedRecord => {
+      const record = {};
+
+      for (const resField of resDataDef.fields) {
+        // Skip fixed and computed fields
+        if (resField.fixedValue != null) {
+          record[resField.id] = resField.fixedValue;
+          continue;
+        }
+        if (resField.sourceRef?.startsWith("computed.")) continue;
+
+        // Try to match by field.id from request
+        const matchedParsed = parsedRecord.fields?.find(pf => pf.id === resField.id);
+        if (matchedParsed) {
+          record[resField.id] = matchedParsed.value;
+        } else if (resField.id === "d_result_code") {
+          record[resField.id] = "Y"; // 기본: 정상
+        } else if (resField.id === "d_error_code") {
+          record[resField.id] = "0000"; // 기본: 정상처리
+        } else {
+          record[resField.id] = "";
+        }
+      }
+
+      return record;
+    });
+
+    // Extract header institution_code from parsed header
+    if (parsed.header.length > 0) {
+      const headerRecord = parsed.header[0];
+      const instField = headerRecord.fields?.find(f => f.id === "h_institution_code");
+      if (instField) {
+        setContext(prev => ({
+          ...prev,
+          headerFields: { ...prev.headerFields, h_institution_code: instField.value }
+        }));
+      }
+    }
+
+    if (newRecords.length > 0) {
+      setDataRecords(newRecords);
+      setSelectedIndex(0);
+      setPreview(null);
+    }
+  };
+
+  // Render select for result_code / error_code fields
+  const renderResponseField = (field, value) => {
+    if (field.id === "d_result_code" && errorCodes) {
+      return (
+        <select
+          value={value}
+          onChange={(e) => handleFieldChange(field.id, e.target.value)}
+          style={{
+            flex: 1,
+            padding: "5px 8px",
+            background: C.s3,
+            border: `1px solid ${C.bd}`,
+            borderRadius: 3,
+            color: value === "N" ? C.rd : C.gn,
+            fontSize: T.sm,
+            fontFamily: "'JetBrains Mono',monospace"
+          }}
+        >
+          {Object.entries(errorCodes.resultCodes).map(([code, info]) => (
+            <option key={code} value={code}>{code} - {info.label}</option>
+          ))}
+        </select>
+      );
+    }
+
+    if (field.id === "d_error_code" && errorCodes) {
+      const resultCode = selectedRecord?.d_result_code;
+      const isNormal = resultCode === "Y" || resultCode !== "N";
+
+      // Group error codes by category
+      const categories = errorCodes.categories || {};
+      const codes = errorCodes.errorCodes || {};
+
+      if (isNormal) {
+        return (
+          <select
+            value="0000"
+            disabled
+            style={{
+              flex: 1,
+              padding: "5px 8px",
+              background: C.s3,
+              border: `1px solid ${C.bd}`,
+              borderRadius: 3,
+              color: C.gn,
+              fontSize: T.sm,
+              fontFamily: "'JetBrains Mono',monospace",
+              opacity: 0.7
+            }}
+          >
+            <option value="0000">0000 - 정상처리</option>
+          </select>
+        );
+      }
+
+      // 불능일 때: 불능코드만 필터링
+      const failCodes = Object.entries(codes).filter(([code]) => code !== "0000");
+      const grouped = {};
+      for (const [code, info] of failCodes) {
+        const cat = info.category || "OTHER";
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push([code, info]);
+      }
+
+      return (
+        <select
+          value={value}
+          onChange={(e) => handleFieldChange(field.id, e.target.value)}
+          style={{
+            flex: 1,
+            padding: "5px 8px",
+            background: C.s3,
+            border: `1px solid ${C.bd}`,
+            borderRadius: 3,
+            color: C.or,
+            fontSize: T.sm,
+            fontFamily: "'JetBrains Mono',monospace"
+          }}
+        >
+          <option value="">-- 불능코드 선택 --</option>
+          {Object.entries(grouped).map(([cat, entries]) => (
+            <optgroup key={cat} label={categories[cat]?.label || cat}>
+              {entries.map(([code, info]) => (
+                <option key={code} value={code}>{code} - {info.label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      );
+    }
+
+    return null;
   };
 
   // Empty state
@@ -147,12 +343,13 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {dataRecords.length === 0 ? (
                 <div style={{ padding: S[3], textAlign: "center", color: C.txD, fontSize: T.sm }}>
-                  레코드를 추가하세요
+                  {isResponseTdd ? "요청 전문을 가져오거나 레코드를 추가하세요" : "레코드를 추가하세요"}
                 </div>
               ) : (
                 dataRecords.map((record, idx) => {
                   const validation = recordValidations[idx];
                   const isSelected = idx === selectedIndex;
+                  const isFail = isResponseTdd && record.d_result_code === "N";
                   return (
                     <div
                       key={idx}
@@ -162,7 +359,7 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
                         alignItems: "center",
                         gap: 6,
                         padding: "6px 8px",
-                        background: isSelected ? C.acD : C.s3,
+                        background: isSelected ? C.acD : isFail ? C.rdD : C.s3,
                         border: `1px solid ${isSelected ? C.ac + "40" : C.bd}`,
                         borderRadius: 3,
                         cursor: "pointer",
@@ -172,9 +369,12 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
                       <span style={{ fontSize: T.sm, color: isSelected ? C.txB : C.tx }}>
                         건 #{idx + 1}
                       </span>
-                      <span style={{ marginLeft: "auto", fontSize: T.xs }}>
-                        {validation.valid ? "✓" : "⚠"}
-                      </span>
+                      {isFail && (
+                        <span style={{ fontSize: 9, color: C.rd, fontWeight: 600 }}>
+                          불능
+                        </span>
+                      )}
+                      <span style={{ flex: 1 }} />
                       {dataRecords.length > 1 && isSelected && (
                         <>
                           <button
@@ -226,12 +426,79 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
                   <span style={{ color: C.or }}>{computed.changeCount}</span>
                 </div>
               )}
+              {/* 불능 집계 (응답 TDD일 때만) */}
+              {isResponseTdd && (computed.failNewCount > 0 || computed.failCancelCount > 0 || computed.failVoluntaryCancelCount > 0) && (
+                <>
+                  <div style={{ borderTop: `1px solid ${C.bd}`, marginTop: 4, paddingTop: 4 }}>
+                    <span style={{ fontSize: 9, color: C.rd, fontWeight: 600 }}>불능 집계</span>
+                  </div>
+                  {computed.failNewCount > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: C.txD }}>불능-신규</span>
+                      <span style={{ color: C.rd, fontFamily: "'JetBrains Mono',monospace" }}>{computed.failNewCount}</span>
+                    </div>
+                  )}
+                  {computed.failCancelCount > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: C.txD }}>불능-해지</span>
+                      <span style={{ color: C.rd, fontFamily: "'JetBrains Mono',monospace" }}>{computed.failCancelCount}</span>
+                    </div>
+                  )}
+                  {computed.failVoluntaryCancelCount > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: C.txD }}>불능-임의해지</span>
+                      <span style={{ color: C.rd, fontFamily: "'JetBrains Mono',monospace" }}>{computed.failVoluntaryCancelCount}</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
 
         {/* Right panel: Field input form */}
         <div style={{ display: "flex", flexDirection: "column", gap: S[3], overflow: "hidden" }}>
+          {/* Import from request (response TDD only) */}
+          {isResponseTdd && requestTdd && (
+            <div style={{ background: C.s2, border: `1px solid ${C.pr}30`, borderRadius: 4, padding: S[2], flexShrink: 0 }}>
+              <Sec icon="↓">
+                {requestTdd.code} 요청 전문 가져오기
+              </Sec>
+              <div style={{ display: "flex", flexDirection: "column", gap: S[2] }}>
+                <textarea
+                    value={importText}
+                    onChange={(e) => setImportText(e.target.value)}
+                    placeholder={`${requestTdd.code} 전문을 붙여넣으세요 (Header + Data + Trailer)...`}
+                    rows={5}
+                    style={{
+                      width: "100%",
+                      padding: "6px 8px",
+                      background: C.s3,
+                      border: `1px solid ${C.bd}`,
+                      borderRadius: 3,
+                      color: C.txB,
+                      fontSize: T.sm,
+                      fontFamily: "'JetBrains Mono',monospace",
+                      resize: "vertical"
+                    }}
+                  />
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Btn
+                      size="sm"
+                      variant="primary"
+                      onClick={handleImportFromRequest}
+                      disabled={!importText.trim()}
+                    >
+                      가져오기 {importText.trim() && `(${importText.split("\n").filter(l => l.trim()).length}줄)`}
+                    </Btn>
+                    <span style={{ fontSize: 9, color: C.txD }}>
+                      요청 전문의 필드값이 자동 매핑되고, 결과코드는 정상으로 기본 설정됩니다
+                    </span>
+                  </div>
+                </div>
+            </div>
+          )}
+
           {/* Context inputs */}
           <div style={{ background: C.s2, border: `1px solid ${C.bd}`, borderRadius: 4, padding: S[2], flexShrink: 0 }}>
             <Sec icon="⚙">HEADER 컨텍스트</Sec>
@@ -252,6 +519,34 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
                   }}
                 />
               </div>
+              {/* DataSource 필드들 */}
+              {headerEditableFields.map(field => (
+                <div key={field.id}>
+                  <div style={{ fontSize: T.xs, color: C.txD, marginBottom: 2 }}>{field.name}</div>
+                  <input
+                    type="text"
+                    value={context.headerFields?.[field.id] || ""}
+                    onChange={(e) => {
+                      setContext({
+                        ...context,
+                        headerFields: { ...context.headerFields, [field.id]: e.target.value }
+                      });
+                      setPreview(null);
+                    }}
+                    placeholder={field.description || ""}
+                    style={{
+                      padding: "4px 8px",
+                      background: C.s3,
+                      border: `1px solid ${C.bd}`,
+                      borderRadius: 3,
+                      color: C.txB,
+                      fontSize: T.sm,
+                      fontFamily: "'JetBrains Mono',monospace",
+                      minWidth: 120
+                    }}
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
@@ -262,16 +557,16 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
             </Sec>
             {!selectedRecord ? (
               <div style={{ padding: S[4], textAlign: "center", color: C.txD, fontSize: T.sm }}>
-                레코드를 추가하거나 선택하세요
+                {isResponseTdd ? "요청 전문을 가져오거나 레코드를 추가하세요" : "레코드를 추가하거나 선택하세요"}
               </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: S[2] }}>
                 {editableFields.map((field, idx) => {
                   const value = selectedRecord[field.id] || "";
                   const col = fc[idx % fc.length];
-                  const transform = field.transformRef
-                    ? tdd.transforms?.find(t => t.id === field.transformRef)
-                    : null;
+
+                  // Check if this field has a special response dropdown
+                  const responseSelect = isResponseTdd ? renderResponseField(field, value) : null;
 
                   return (
                     <div key={field.id}>
@@ -281,26 +576,23 @@ export default function BuilderTab({ tdd, savedState, onStateChange }) {
                         {field.required && <span style={{ color: C.rd, fontSize: T.xs }}>*</span>}
                       </div>
                       <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                        <input
-                          type="text"
-                          value={value}
-                          onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                          placeholder={field.description || ""}
-                          style={{
-                            flex: 1,
-                            padding: "5px 8px",
-                            background: C.s3,
-                            border: `1px solid ${C.bd}`,
-                            borderRadius: 3,
-                            color: C.txB,
-                            fontSize: T.sm,
-                            fontFamily: "'JetBrains Mono',monospace"
-                          }}
-                        />
-                        {transform && transform.type === "MAPPING_TABLE" && value && (
-                          <span style={{ fontSize: T.xs, color: transform.mappings?.[value] ? C.gn : C.or }}>
-                            → {transform.mappings?.[value] || "?"}
-                          </span>
+                        {responseSelect || (
+                          <input
+                            type="text"
+                            value={value}
+                            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                            placeholder={field.description || ""}
+                            style={{
+                              flex: 1,
+                              padding: "5px 8px",
+                              background: C.s3,
+                              border: `1px solid ${C.bd}`,
+                              borderRadius: 3,
+                              color: C.txB,
+                              fontSize: T.sm,
+                              fontFamily: "'JetBrains Mono',monospace"
+                            }}
+                          />
                         )}
                       </div>
                       <div style={{ fontSize: 9, color: C.txD, marginTop: 2 }}>
