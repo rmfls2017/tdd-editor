@@ -1,6 +1,6 @@
 # TDD Editor - 작업 리스트
 
-> 최종 업데이트: 2026-03-08
+> 최종 업데이트: 2026-03-08 (Parser 경고 오탐 이슈 추가)
 
 ---
 
@@ -59,6 +59,24 @@
 ---
 
 ## 미완료 작업 (우선순위순)
+
+### Parser fixedValue 경고 오탐 수정
+**심각도:** HIGH
+**파일:** `src/utils/dataParser.js:72`
+
+**근본 원인:** `fixedValue` 비교 시 패딩 제거 후 값(`trimmedValue`)을 사용하는데, `fixedValue`는 패딩 포함 원시 값으로 정의되어 있어 불일치 발생.
+
+**오탐 시나리오:**
+- ZERO_LEFT 패딩 필드: `"00000000"` → stripPadding → `"0"` ≠ fixedValue `"00000000"` (EB13/EB14 h_seq_no, t_change_count 등)
+- SPACE_RIGHT 패딩 필드: `" "` → stripPadding → `""` ≠ fixedValue `" "` (EB13 d_result_code)
+
+**수정 방안:** `trimmedValue` 대신 `rawValue`로 fixedValue와 비교
+```js
+// 현재
+if (field.fixedValue != null && trimmedValue !== field.fixedValue)
+// 수정
+if (field.fixedValue != null && rawValue !== field.fixedValue)
+```
 
 ### DRAFT TDD → ACTIVE 전환 작업
 
